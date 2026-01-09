@@ -17,22 +17,36 @@ public class SaleDetailController {
 
     private final SaleDetailRepository saleDetailRepository;
 
-    /**  GET /api/store/saledetails/sale/{saleId} - Obtener todos los detalles de una venta específica */
+    /**
+     * GET /api/store/saledetails/sale/{saleId}
+     * Spring Data JPA es inteligente: findBySaleId busca el campo "sale" y luego su "id" automáticamente.
+     */
     @GetMapping("/sale/{saleId}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
     public ResponseEntity<List<SaleDetail>> getDetailsBySaleId(@PathVariable Long saleId) {
         List<SaleDetail> details = saleDetailRepository.findBySaleId(saleId);
+
         if (details.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(details);
     }
 
-    /**  POST /api/store/saledetails - Agregar un nuevo ítem de detalle de venta */
+    /** * POST /api/store/saledetails
+     * JSON esperado ahora debe ser:
+     * {
+     * "sale": { "id": 1 },
+     * "productId": 10,
+     * "quantity": 2,
+     * ...
+     * }
+     */
     @PostMapping
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
     public ResponseEntity<SaleDetail> addSaleDetail(@RequestBody SaleDetail detail) {
-        if (detail.getSaleId() == null || detail.getProductId() == null || detail.getQuantity() <= 0) {
+        if (detail.getSale() == null || detail.getSale().getId() == null
+                || detail.getProductId() == null || detail.getQuantity() <= 0) {
+
             return ResponseEntity.badRequest().build();
         }
 
@@ -40,7 +54,6 @@ public class SaleDetailController {
         return ResponseEntity.status(HttpStatus.CREATED).body(newDetail);
     }
 
-    /**  DELETE /api/store/saledetails/{id} - Eliminar un ítem de detalle */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
     public ResponseEntity<Void> deleteSaleDetail(@PathVariable Long id) {

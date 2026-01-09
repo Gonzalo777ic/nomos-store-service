@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/collections")
+@RequestMapping("/api/store/collections")
 public class CollectionController {
 
     @Autowired
