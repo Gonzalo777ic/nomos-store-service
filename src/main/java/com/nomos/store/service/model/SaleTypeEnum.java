@@ -3,7 +3,7 @@ package com.nomos.store.service.model;
 public enum SaleTypeEnum {
     BOLETA("Boleta de Venta Electrónica"),
     FACTURA("Factura Electrónica"),
-    TICKET("Ticket / Venta Rápida"); // Mejor que "OTRO"
+    TICKET("Ticket / Venta Rápida");
 
     private final String description;
 

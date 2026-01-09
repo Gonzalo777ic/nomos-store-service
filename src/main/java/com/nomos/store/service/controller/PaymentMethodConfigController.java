@@ -19,14 +19,14 @@ public class PaymentMethodConfigController {
 
     private final PaymentMethodConfigRepository repository;
 
-    /** 🔑 GET /api/store/payment-methods - Obtener todos los métodos */
+    /**  GET /api/store/payment-methods - Obtener todos los métodos */
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
     public List<PaymentMethodConfig> getAll() {
         return repository.findAll();
     }
 
-    /** 🔑 POST /api/store/payment-methods - Crear nuevo método (Solo Admin) */
+    /**  POST /api/store/payment-methods - Crear nuevo método (Solo Admin) */
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<PaymentMethodConfig> create(@RequestBody PaymentMethodConfig config) {
@@ -34,12 +34,11 @@ public class PaymentMethodConfigController {
             PaymentMethodConfig savedConfig = repository.save(config);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedConfig);
         } catch (DataIntegrityViolationException e) {
-            // Manejo de nombre duplicado
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
     }
 
-    /** 🔑 PUT /api/store/payment-methods/{id} - Actualizar método (Solo Admin) */
+    /**  PUT /api/store/payment-methods/{id} - Actualizar método (Solo Admin) */
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<PaymentMethodConfig> update(@PathVariable Long id, @RequestBody PaymentMethodConfig updatedConfig) {
@@ -61,7 +60,7 @@ public class PaymentMethodConfigController {
         }
     }
 
-    /** 🔑 DELETE /api/store/payment-methods/{id} - Eliminar método (Solo Admin) */
+    /**  DELETE /api/store/payment-methods/{id} - Eliminar método (Solo Admin) */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {

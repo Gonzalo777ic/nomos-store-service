@@ -20,7 +20,7 @@ public class TaxRateController {
     private final TaxRateRepository taxRateRepository;
 
     /**
-     * 🔑 ENDPOINT: GET /api/store/tax-rates
+     *  ENDPOINT: GET /api/store/tax-rates
      * Obtiene la lista completa de todas las tasas de impuesto configuradas.
      * Permite a todos los roles internos y vendedores obtener la lista de tasas.
      */
@@ -31,7 +31,7 @@ public class TaxRateController {
     }
 
     /**
-     * 🔑 ENDPOINT: POST /api/store/tax-rates
+     *  ENDPOINT: POST /api/store/tax-rates
      * Solo los Administradores pueden crear nuevas tasas.
      */
     @PostMapping
@@ -41,7 +41,6 @@ public class TaxRateController {
             TaxRate savedRate = taxRateRepository.save(taxRate);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedRate);
         } catch (DataIntegrityViolationException e) {
-            // Manejo de error de unicidad (409 Conflict)
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
     }
@@ -56,20 +55,17 @@ public class TaxRateController {
         }
 
         TaxRate existingRate = existingRateOpt.get();
-
-        // 🚨 Solo actualizamos la tasa. Mantenemos el nombre y el ID.
         existingRate.setRate(updatedRate.getRate());
 
         try {
             TaxRate savedRate = taxRateRepository.save(existingRate);
             return ResponseEntity.ok(savedRate);
         } catch (DataIntegrityViolationException e) {
-            // Esto no debería pasar ya que el nombre no se cambia, pero por seguridad
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
     }
     /**
-     * 🔑 ENDPOINT: DELETE /api/store/tax-rates/{id}
+     *  ENDPOINT: DELETE /api/store/tax-rates/{id}
      * Solo los Administradores pueden eliminar tasas.
      */
     @DeleteMapping("/{id}")
@@ -81,7 +77,4 @@ public class TaxRateController {
         taxRateRepository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
-
-    // Opcionalmente, se podría añadir un PUT para editar, pero por simplicidad de un valor fijo,
-    // a menudo se prefiere eliminar y recrear si el valor es incorrecto.
 }

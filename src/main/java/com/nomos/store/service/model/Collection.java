@@ -23,7 +23,7 @@ public class Collection {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sale_id", nullable = false)
-    @JsonIgnoreProperties("details") // Evita ciclos infinitos al serializar si Sale tiene lista de collections
+    @JsonIgnoreProperties("details")
     private Sale sale;
 
     @Column(name = "collection_date", nullable = false)
