@@ -35,7 +35,7 @@ public class CollectionController {
         private Double amount;
         private Long paymentMethodId;
         private String referenceNumber;
-        private LocalDateTime collectionDate; // Opcional
+        private LocalDateTime collectionDate;
     }
 
     @PostMapping

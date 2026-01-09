@@ -21,14 +21,14 @@ public class PromotionController {
 
     private final PromotionRepository promotionRepository;
 
-    /** 🔑 GET /api/store/promotions - Obtener todas las promociones (Admin) */
+    /**  GET /api/store/promotions - Obtener todas las promociones (Admin) */
     @GetMapping
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<List<Promotion>> getAll() {
         return ResponseEntity.ok(promotionRepository.findAll());
     }
 
-    /** * 🔑 GET /api/store/promotions/active - Obtener promociones activas (Cualquier usuario para cálculos de venta)
+    /** *  GET /api/store/promotions/active - Obtener promociones activas (Cualquier usuario para cálculos de venta)
      * La lógica de negocio está aquí.
      */
     @GetMapping("/active")
@@ -39,24 +39,23 @@ public class PromotionController {
         return ResponseEntity.ok(activePromotions);
     }
 
-    /** 🔑 POST /api/store/promotions - Crear nueva promoción (Admin) */
+    /**  POST /api/store/promotions - Crear nueva promoción (Admin) */
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @Transactional
     public ResponseEntity<Promotion> create(@RequestBody Promotion promotion) {
-        // Validación de Fechas
         if (promotion.getStartDate().isAfter(promotion.getEndDate())) {
-            return ResponseEntity.badRequest().body(null); // Fecha de inicio posterior a la de fin
+            return ResponseEntity.badRequest().body(null);
         }
         try {
             Promotion newPromotion = promotionRepository.save(promotion);
             return ResponseEntity.status(HttpStatus.CREATED).body(newPromotion);
         } catch (DataIntegrityViolationException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build(); // Nombre duplicado
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
     }
 
-    /** 🔑 PUT /api/store/promotions/{id} - Actualizar promoción (Admin) */
+    /**  PUT /api/store/promotions/{id} - Actualizar promoción (Admin) */
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @Transactional
@@ -66,14 +65,11 @@ public class PromotionController {
         if (existingPromotionOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-
-        // Validación de Fechas
         if (updatedPromotion.getStartDate().isAfter(updatedPromotion.getEndDate())) {
             return ResponseEntity.badRequest().build();
         }
 
         Promotion existingPromotion = existingPromotionOpt.get();
-        // Aplicar solo los campos que vienen en la actualización
         existingPromotion.setName(updatedPromotion.getName());
         existingPromotion.setType(updatedPromotion.getType());
         existingPromotion.setDiscountValue(updatedPromotion.getDiscountValue());
@@ -90,7 +86,7 @@ public class PromotionController {
         }
     }
 
-    /** 🔑 DELETE /api/store/promotions/{id} - Eliminar promoción (Admin) */
+    /**  DELETE /api/store/promotions/{id} - Eliminar promoción (Admin) */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
@@ -102,7 +98,6 @@ public class PromotionController {
             promotionRepository.deleteById(id);
             return ResponseEntity.noContent().build();
         } catch (DataIntegrityViolationException e) {
-            // Error si hay claves foráneas (ej. SaleDetail) que dependen de esta promoción.
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
     }

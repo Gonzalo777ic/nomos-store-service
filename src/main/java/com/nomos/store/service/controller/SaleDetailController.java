@@ -17,7 +17,7 @@ public class SaleDetailController {
 
     private final SaleDetailRepository saleDetailRepository;
 
-    /** 🔑 GET /api/store/saledetails/sale/{saleId} - Obtener todos los detalles de una venta específica */
+    /**  GET /api/store/saledetails/sale/{saleId} - Obtener todos los detalles de una venta específica */
     @GetMapping("/sale/{saleId}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
     public ResponseEntity<List<SaleDetail>> getDetailsBySaleId(@PathVariable Long saleId) {
@@ -28,11 +28,10 @@ public class SaleDetailController {
         return ResponseEntity.ok(details);
     }
 
-    /** 🔑 POST /api/store/saledetails - Agregar un nuevo ítem de detalle de venta */
+    /**  POST /api/store/saledetails - Agregar un nuevo ítem de detalle de venta */
     @PostMapping
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
     public ResponseEntity<SaleDetail> addSaleDetail(@RequestBody SaleDetail detail) {
-        // Validación básica
         if (detail.getSaleId() == null || detail.getProductId() == null || detail.getQuantity() <= 0) {
             return ResponseEntity.badRequest().build();
         }
@@ -41,7 +40,7 @@ public class SaleDetailController {
         return ResponseEntity.status(HttpStatus.CREATED).body(newDetail);
     }
 
-    /** 🔑 DELETE /api/store/saledetails/{id} - Eliminar un ítem de detalle */
+    /**  DELETE /api/store/saledetails/{id} - Eliminar un ítem de detalle */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
     public ResponseEntity<Void> deleteSaleDetail(@PathVariable Long id) {

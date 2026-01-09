@@ -1,4 +1,4 @@
-package com.nomos.store.service.controller; // En el mismo paquete del Controller
+package com.nomos.store.service.controller;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,7 +15,7 @@ public class SaleDetailPayload {
     private Double unitPrice;
     private Integer quantity;
 
-    private Double subtotal; // Usado para cálculos preliminares del frontend
+    private Double subtotal;
     private Long taxRateId;
-    private Long promotionId; // Puede ser nulo
+    private Long promotionId;
 }
