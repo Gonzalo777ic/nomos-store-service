@@ -22,6 +22,7 @@ public class Sale {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @Column(name = "client_id")
     private Long clientId;
 
@@ -30,9 +31,16 @@ public class Sale {
 
     @Column(name = "sale_date", nullable = false)
     private LocalDateTime saleDate;
+
+    // TIPO DE DOCUMENTO (Boleta, Factura, Ticket)
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, length = 50)
     private SaleTypeEnum type;
+
+    // CONDICIÓN DE PAGO (Contado, Crédito)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_condition", nullable = false, length = 50)
+    private PaymentConditionEnum paymentCondition;
 
     @Column(name = "status", nullable = false, length = 50)
     private String status;
@@ -42,14 +50,23 @@ public class Sale {
 
     @Column(name = "total_discount", nullable = false)
     private Double totalDiscount;
+
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnoreProperties("sale")
     @Builder.Default
     private List<SaleDetail> details = new ArrayList<>();
+
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnoreProperties("sale")
     @Builder.Default
     private List<Collection> collections = new ArrayList<>();
+
+    // -- CAMPOS PARA CRÉDITO --
+    @Column(name = "due_date", nullable = false)
+    private LocalDateTime dueDate;
+
+    @Column(name = "credit_days")
+    private Integer creditDays;
 
     /**
      * Calcula el monto total pagado sumando las cobranzas registradas.
@@ -79,5 +96,19 @@ public class Sale {
      */
     public boolean isFullyPaid() {
         return getBalance() <= 0.01;
+    }
+
+    public boolean isOverdue() {
+        // Si el saldo es casi 0 (pagado), no está vencida
+        if (getBalance() <= 0.01) return false;
+
+        // Si hoy es mayor que la fecha de vencimiento, está vencida
+        return LocalDateTime.now().isAfter(dueDate);
+    }
+
+    public String getPaymentStatus() {
+        if (getBalance() <= 0.01) return "PAGADO";
+        if (isOverdue()) return "VENCIDO";
+        return "PENDIENTE";
     }
 }

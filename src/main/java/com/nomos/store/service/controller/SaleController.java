@@ -1,10 +1,11 @@
 package com.nomos.store.service.controller;
 
+import com.nomos.store.service.model.PaymentConditionEnum;
 import com.nomos.store.service.model.Sale;
 import com.nomos.store.service.model.SaleDetail;
 import com.nomos.store.service.model.SaleTypeEnum;
-import com.nomos.store.service.repository.SaleRepository;
 import com.nomos.store.service.repository.SaleDetailRepository;
+import com.nomos.store.service.repository.SaleRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,8 @@ public class SaleController {
 
     private final SaleRepository saleRepository;
     private final SaleDetailRepository saleDetailRepository;
+
+
     @Data
     public static class SaleRequestDetail {
         private Long productId;
@@ -41,7 +44,11 @@ public class SaleController {
     public static class SaleCreationRequest {
         private Long clientId;
         private LocalDateTime saleDate;
-        private String type;
+
+        private String type;             // "BOLETA", "FACTURA", "TICKET"
+        private String paymentCondition; // "CONTADO", "CREDITO"
+
+        private Integer creditDays;
         private Long sellerId;
         private List<SaleRequestDetail> details;
     }
@@ -51,6 +58,7 @@ public class SaleController {
         private final String key;
         private final String description;
     }
+
 
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER', 'ROLE_VENDOR')")
@@ -68,6 +76,15 @@ public class SaleController {
         );
     }
 
+    @GetMapping("/payment-conditions")
+    public ResponseEntity<List<ReferenceDTO>> getPaymentConditions() {
+        return ResponseEntity.ok(
+                Arrays.stream(PaymentConditionEnum.values())
+                        .map(pc -> new ReferenceDTO(pc.name(), pc.getDescription()))
+                        .collect(Collectors.toList())
+        );
+    }
+
     @PostMapping
     @Transactional
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
@@ -75,18 +92,42 @@ public class SaleController {
         log.info("Intentando crear venta para Cliente ID: {}", request.getClientId());
 
         try {
-            SaleTypeEnum saleType;
-            try {
-                saleType = SaleTypeEnum.valueOf(request.getType().toUpperCase());
-            } catch (Exception e) {
-                return ResponseEntity.badRequest().body("Tipo de venta inválido: " + request.getType());
-            }
             if (request.getSellerId() == null || request.getSaleDate() == null) {
                 return ResponseEntity.badRequest().body("Faltan datos obligatorios (Vendedor o Fecha)");
             }
             if (request.getDetails() == null || request.getDetails().isEmpty()) {
                 return ResponseEntity.badRequest().body("La venta debe tener al menos un detalle");
             }
+
+            SaleTypeEnum saleType;
+            try {
+                saleType = SaleTypeEnum.valueOf(request.getType().toUpperCase());
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body("Tipo de comprobante inválido: " + request.getType());
+            }
+
+            PaymentConditionEnum paymentCondition;
+            try {
+                if (request.getPaymentCondition() == null) {
+                    return ResponseEntity.badRequest().body("La condición de pago es obligatoria (CONTADO/CREDITO)");
+                }
+                paymentCondition = PaymentConditionEnum.valueOf(request.getPaymentCondition().toUpperCase());
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body("Condición de pago inválida: " + request.getPaymentCondition());
+            }
+
+            LocalDateTime calculatedDueDate = request.getSaleDate();
+            Integer actualCreditDays = 0;
+
+            if (paymentCondition == PaymentConditionEnum.CREDITO) {
+                actualCreditDays = (request.getCreditDays() != null && request.getCreditDays() > 0)
+                        ? request.getCreditDays()
+                        : 30;
+                calculatedDueDate = request.getSaleDate().plusDays(actualCreditDays);
+            } else {
+                actualCreditDays = 0;
+            }
+
             double totalAmount = request.getDetails().stream()
                     .mapToDouble(SaleRequestDetail::getSubtotal)
                     .sum();
@@ -94,14 +135,18 @@ public class SaleController {
             Sale newSale = Sale.builder()
                     .clientId(request.getClientId())
                     .saleDate(request.getSaleDate())
-                    .type(saleType)
+                    .type(saleType)                     // "FACTURA"
+                    .paymentCondition(paymentCondition) // "CREDITO"
                     .sellerId(request.getSellerId())
                     .totalAmount(totalAmount)
                     .totalDiscount(0.0)
-                    .status("COMPLETADA")
+                    .status("EMITIDA")
+                    .dueDate(calculatedDueDate)
+                    .creditDays(actualCreditDays)
                     .build();
 
             Sale savedSale = saleRepository.save(newSale);
+
             for (SaleRequestDetail d : request.getDetails()) {
                 if (d.getTaxRateId() == null) {
                     throw new IllegalArgumentException("El producto " + d.getProductId() + " no tiene tasa de impuesto");
@@ -131,4 +176,21 @@ public class SaleController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al procesar la venta");
         }
     }
+
+
+    @PatchMapping("/{id}/cancel")
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
+    public ResponseEntity<?> cancelSale(@PathVariable Long id) {
+        return saleRepository.findById(id).map(sale -> {
+            if ("CANCELADA".equals(sale.getStatus())) {
+                return ResponseEntity.badRequest().body("La venta ya está cancelada.");
+            }
+            sale.setStatus("CANCELADA");
+            saleRepository.save(sale);
+            log.info("Venta ID {} cancelada por el usuario.", id);
+            return ResponseEntity.ok().build();
+        }).orElse(ResponseEntity.notFound().build());
+    }
 }
+
