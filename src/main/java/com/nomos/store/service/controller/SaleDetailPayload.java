@@ -4,9 +4,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
-/**
- * Payload para recibir un solo ítem de detalle de venta desde el frontend.
- */
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

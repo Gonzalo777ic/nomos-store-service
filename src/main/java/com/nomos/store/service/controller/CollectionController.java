@@ -39,14 +39,22 @@ public class CollectionController {
     }
 
     @PostMapping
-    public ResponseEntity<Collection> createCollection(@RequestBody CollectionPayload payload) {
+
+    public ResponseEntity<?> createCollection(@RequestBody CollectionPayload payload) {
+
         Sale sale = saleRepository.findById(payload.getSaleId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Venta no encontrada"));
 
         PaymentMethodConfig paymentMethod = paymentMethodRepository.findById(payload.getPaymentMethodId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Método de pago no encontrado"));
 
+        if ("CANCELADA".equals(sale.getStatus())) {
+
+            return ResponseEntity.badRequest().body("No se puede registrar cobros en una venta CANCELADA.");
+        }
+
         if (payload.getAmount() <= 0) {
+
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El monto debe ser mayor a 0");
         }
 
@@ -55,10 +63,13 @@ public class CollectionController {
                 .amount(payload.getAmount())
                 .paymentMethod(paymentMethod)
                 .referenceNumber(payload.getReferenceNumber())
+
                 .collectionDate(payload.getCollectionDate() != null ? payload.getCollectionDate() : LocalDateTime.now())
+                .status("ACTIVO")
                 .build();
 
         Collection savedCollection = collectionRepository.save(collection);
+
         return new ResponseEntity<>(savedCollection, HttpStatus.CREATED);
     }
 

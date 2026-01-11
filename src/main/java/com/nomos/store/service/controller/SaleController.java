@@ -45,8 +45,8 @@ public class SaleController {
         private Long clientId;
         private LocalDateTime saleDate;
 
-        private String type;             // "BOLETA", "FACTURA", "TICKET"
-        private String paymentCondition; // "CONTADO", "CREDITO"
+        private String type;
+        private String paymentCondition;
 
         private Integer creditDays;
         private Long sellerId;
@@ -135,8 +135,8 @@ public class SaleController {
             Sale newSale = Sale.builder()
                     .clientId(request.getClientId())
                     .saleDate(request.getSaleDate())
-                    .type(saleType)                     // "FACTURA"
-                    .paymentCondition(paymentCondition) // "CREDITO"
+                    .type(saleType)
+                    .paymentCondition(paymentCondition)
                     .sellerId(request.getSellerId())
                     .totalAmount(totalAmount)
                     .totalDiscount(0.0)
@@ -183,12 +183,27 @@ public class SaleController {
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
     public ResponseEntity<?> cancelSale(@PathVariable Long id) {
         return saleRepository.findById(id).map(sale -> {
+
             if ("CANCELADA".equals(sale.getStatus())) {
                 return ResponseEntity.badRequest().body("La venta ya está cancelada.");
             }
+
             sale.setStatus("CANCELADA");
+
+            if (sale.getCollections() != null && !sale.getCollections().isEmpty()) {
+                sale.getCollections().forEach(collection -> {
+
+                    if (!"ANULADO".equals(collection.getStatus())) {
+                        collection.setStatus("ANULADO");
+                        log.info("Cobranza ID {} anulada por cancelación de venta padre.", collection.getId());
+                    }
+                });
+            }
+
+
             saleRepository.save(sale);
-            log.info("Venta ID {} cancelada por el usuario.", id);
+
+            log.info("Venta ID {} y sus cobros han sido cancelados.", id);
             return ResponseEntity.ok().build();
         }).orElse(ResponseEntity.notFound().build());
     }

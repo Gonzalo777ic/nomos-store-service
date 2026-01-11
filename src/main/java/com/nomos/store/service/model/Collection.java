@@ -39,6 +39,9 @@ public class Collection {
     @Column(name = "reference_number")
     private String referenceNumber;
 
+    @Column(name = "status", nullable = false)
+    private String status;
+
     @PrePersist
     public void prePersist() {
         if (this.collectionDate == null) {
