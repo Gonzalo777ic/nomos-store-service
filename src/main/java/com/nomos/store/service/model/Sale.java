@@ -2,11 +2,9 @@ package com.nomos.store.service.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*; // Importante importar todo de lombok
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,12 +50,15 @@ public class Sale {
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnoreProperties("sale")
     @Builder.Default
+    @ToString.Exclude // <--- EVITA CICLO INFINITO
+    @EqualsAndHashCode.Exclude // <--- EVITA CICLO INFINITO
     private List<SaleDetail> details = new ArrayList<>();
 
-    @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "sale", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JsonIgnoreProperties("sale")
-    @Builder.Default
-    private List<Collection> collections = new ArrayList<>();
+    @ToString.Exclude // <--- CRUCIAL: Rompe el ciclo con AccountsReceivable
+    @EqualsAndHashCode.Exclude
+    private AccountsReceivable accountsReceivable;
 
     @Column(name = "due_date", nullable = false)
     private LocalDateTime dueDate;
@@ -65,46 +66,27 @@ public class Sale {
     @Column(name = "credit_days")
     private Integer creditDays;
 
-    /**
-     * Calcula el monto total pagado sumando las cobranzas registradas.
-     * @return suma de pagos o 0.0
-     */
+
     public Double getPaidAmount() {
-        if (collections == null || collections.isEmpty()) {
-            return 0.0;
-        }
-        return collections.stream()
-                .filter(c -> c.getAmount() != null)
-                .mapToDouble(Collection::getAmount)
-                .sum();
+        return accountsReceivable != null ? accountsReceivable.getPaidAmount() : 0.0;
     }
 
-    /**
-     * Calcula el saldo pendiente por cobrar.
-     * @return totalAmount - paidAmount
-     */
     public Double getBalance() {
-        if (totalAmount == null) return 0.0;
-        return this.totalAmount - getPaidAmount();
-    }
-
-    /**
-     * Verifica si la venta está totalmente pagada.
-     */
-    public boolean isFullyPaid() {
-        return getBalance() <= 0.01;
-    }
-
-    public boolean isOverdue() {
-
-        if (getBalance() <= 0.01) return false;
-
-        return LocalDateTime.now().isAfter(dueDate);
+        return accountsReceivable != null ? accountsReceivable.getBalance() : (totalAmount != null ? totalAmount : 0.0);
     }
 
     public String getPaymentStatus() {
-        if (getBalance() <= 0.01) return "PAGADO";
-        if (isOverdue()) return "VENCIDO";
-        return "PENDIENTE";
+        if (accountsReceivable == null) return "PENDIENTE";
+        return accountsReceivable.getStatus().name();
+    }
+
+    public boolean isOverdue() {
+        if (accountsReceivable == null) return false;
+        LocalDate today = LocalDate.now();
+
+        if (accountsReceivable.getInstallments() == null) return false;
+
+        return accountsReceivable.getInstallments().stream()
+                .anyMatch(i -> i.isOverdue(today));
     }
 }

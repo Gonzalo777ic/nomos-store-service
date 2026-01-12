@@ -1,11 +1,9 @@
 package com.nomos.store.service.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -23,8 +21,24 @@ public class Collection {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sale_id", nullable = false)
-    @JsonIgnoreProperties("details")
+    @JsonIgnoreProperties({"details", "accountsReceivable"})
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Sale sale;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "accounts_receivable_id", nullable = false)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private AccountsReceivable accountsReceivable;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "installment_id")
+    @JsonIgnore // <--- AGREGAR ESTO. Evita que Jackson toque el proxy de la cuota.
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Installment installment;
 
     @Column(name = "collection_date", nullable = false)
     private LocalDateTime collectionDate;

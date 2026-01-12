@@ -1,9 +1,6 @@
 package com.nomos.store.service.controller;
 
-import com.nomos.store.service.model.PaymentConditionEnum;
-import com.nomos.store.service.model.Sale;
-import com.nomos.store.service.model.SaleDetail;
-import com.nomos.store.service.model.SaleTypeEnum;
+import com.nomos.store.service.model.*;
 import com.nomos.store.service.repository.SaleDetailRepository;
 import com.nomos.store.service.repository.SaleRepository;
 import lombok.Data;
@@ -15,7 +12,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,7 +27,6 @@ public class SaleController {
 
     private final SaleRepository saleRepository;
     private final SaleDetailRepository saleDetailRepository;
-
 
     @Data
     public static class SaleRequestDetail {
@@ -44,13 +42,12 @@ public class SaleController {
     public static class SaleCreationRequest {
         private Long clientId;
         private LocalDateTime saleDate;
-
         private String type;
         private String paymentCondition;
-
         private Integer creditDays;
         private Long sellerId;
         private List<SaleRequestDetail> details;
+        private Integer numberOfInstallments;
     }
 
     @Data
@@ -59,11 +56,9 @@ public class SaleController {
         private final String description;
     }
 
-
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER', 'ROLE_VENDOR')")
     public ResponseEntity<List<Sale>> getAllSales() {
-        log.info("Consultando todas las ventas...");
         return ResponseEntity.ok(saleRepository.findAll());
     }
 
@@ -89,9 +84,10 @@ public class SaleController {
     @Transactional
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
     public ResponseEntity<?> createSale(@RequestBody SaleCreationRequest request) {
-        log.info("Intentando crear venta para Cliente ID: {}", request.getClientId());
+        log.info("Creando venta y estructura financiera para Cliente ID: {}", request.getClientId());
 
         try {
+
             if (request.getSellerId() == null || request.getSaleDate() == null) {
                 return ResponseEntity.badRequest().body("Faltan datos obligatorios (Vendedor o Fecha)");
             }
@@ -99,34 +95,8 @@ public class SaleController {
                 return ResponseEntity.badRequest().body("La venta debe tener al menos un detalle");
             }
 
-            SaleTypeEnum saleType;
-            try {
-                saleType = SaleTypeEnum.valueOf(request.getType().toUpperCase());
-            } catch (Exception e) {
-                return ResponseEntity.badRequest().body("Tipo de comprobante inválido: " + request.getType());
-            }
-
-            PaymentConditionEnum paymentCondition;
-            try {
-                if (request.getPaymentCondition() == null) {
-                    return ResponseEntity.badRequest().body("La condición de pago es obligatoria (CONTADO/CREDITO)");
-                }
-                paymentCondition = PaymentConditionEnum.valueOf(request.getPaymentCondition().toUpperCase());
-            } catch (Exception e) {
-                return ResponseEntity.badRequest().body("Condición de pago inválida: " + request.getPaymentCondition());
-            }
-
-            LocalDateTime calculatedDueDate = request.getSaleDate();
-            Integer actualCreditDays = 0;
-
-            if (paymentCondition == PaymentConditionEnum.CREDITO) {
-                actualCreditDays = (request.getCreditDays() != null && request.getCreditDays() > 0)
-                        ? request.getCreditDays()
-                        : 30;
-                calculatedDueDate = request.getSaleDate().plusDays(actualCreditDays);
-            } else {
-                actualCreditDays = 0;
-            }
+            SaleTypeEnum saleType = SaleTypeEnum.valueOf(request.getType().toUpperCase());
+            PaymentConditionEnum paymentCondition = PaymentConditionEnum.valueOf(request.getPaymentCondition().toUpperCase());
 
             double totalAmount = request.getDetails().stream()
                     .mapToDouble(SaleRequestDetail::getSubtotal)
@@ -141,71 +111,132 @@ public class SaleController {
                     .totalAmount(totalAmount)
                     .totalDiscount(0.0)
                     .status("EMITIDA")
-                    .dueDate(calculatedDueDate)
-                    .creditDays(actualCreditDays)
+                    .dueDate(request.getSaleDate().plusDays(paymentCondition == PaymentConditionEnum.CREDITO ? (request.getCreditDays() != null ? request.getCreditDays() : 0) : 0))
+                    .creditDays(request.getCreditDays())
                     .build();
+
 
             Sale savedSale = saleRepository.save(newSale);
 
-            for (SaleRequestDetail d : request.getDetails()) {
-                if (d.getTaxRateId() == null) {
-                    throw new IllegalArgumentException("El producto " + d.getProductId() + " no tiene tasa de impuesto");
-                }
+            AccountsReceivable ar = AccountsReceivable.builder()
+                    .sale(savedSale) // Ahora savedSale tiene ID real
+                    .totalAmount(totalAmount)
+                    .status(AccountsReceivableStatus.ACTIVE)
+                    .build();
 
+            Integer installmentsCount = request.getNumberOfInstallments();
+            List<Installment> installments = generateInstallments(
+                    ar,
+                    paymentCondition,
+                    installmentsCount,
+                    request.getSaleDate().toLocalDate(),
+                    totalAmount
+            );
+            ar.setInstallments(installments);
+
+
+
+
+
+
+
+            savedSale.setAccountsReceivable(ar);
+            savedSale = saleRepository.save(savedSale); // Re-guardar para activar cascade y actualizar referencia
+
+            for (SaleRequestDetail d : request.getDetails()) {
                 SaleDetail detail = new SaleDetail();
                 detail.setSale(savedSale);
-
                 detail.setProductId(d.getProductId());
                 detail.setUnitPrice(d.getUnitPrice());
                 detail.setQuantity(d.getQuantity());
                 detail.setSubtotal(d.getSubtotal());
                 detail.setTaxRateId(d.getTaxRateId());
                 detail.setPromotionId(d.getPromotionId());
-
                 saleDetailRepository.save(detail);
             }
 
-            log.info("Venta creada exitosamente con ID: {}", savedSale.getId());
+            log.info("Venta #{} registrada exitosamente.", savedSale.getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(savedSale);
 
         } catch (IllegalArgumentException e) {
-            log.warn("Error de validación: {}", e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
-            log.error("Error interno al crear venta", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al procesar la venta");
+            log.error("Error creando venta", e);
+
+            throw new RuntimeException("Error interno al crear venta: " + e.getMessage());
         }
     }
 
+    private List<Installment> generateInstallments(AccountsReceivable ar, PaymentConditionEnum condition, Integer numberOfInstallments, LocalDate baseDate, Double totalAmount) {
+        List<Installment> installments = new ArrayList<>();
+
+        if (condition == PaymentConditionEnum.CONTADO) {
+
+            installments.add(Installment.builder()
+                    .accountsReceivable(ar)
+                    .number(1)
+                    .expectedAmount(totalAmount)
+                    .dueDate(baseDate)
+                    .status(InstallmentStatus.PENDING) // El frontend maneja la lógica de visualización
+                    .build());
+        } else {
+
+            int n = (numberOfInstallments != null && numberOfInstallments > 0) ? numberOfInstallments : 1;
+
+
+            double rawAmount = totalAmount / n;
+            double roundedAmount = Math.round(rawAmount * 100.0) / 100.0; // 2 decimales
+
+            double accumulated = 0.0;
+
+            for (int i = 1; i <= n; i++) {
+                double currentAmount;
+
+                if (i == n) {
+                    currentAmount = Math.round((totalAmount - accumulated) * 100.0) / 100.0;
+                } else {
+                    currentAmount = roundedAmount;
+                }
+
+                accumulated += currentAmount;
+
+                installments.add(Installment.builder()
+                        .accountsReceivable(ar)
+                        .number(i)
+                        .expectedAmount(currentAmount)
+                        .dueDate(baseDate.plusMonths(i)) // Frecuencia Mensual
+                        .status(InstallmentStatus.PENDING)
+                        .build());
+            }
+        }
+        return installments;
+    }
 
     @PatchMapping("/{id}/cancel")
     @Transactional
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
     public ResponseEntity<?> cancelSale(@PathVariable Long id) {
         return saleRepository.findById(id).map(sale -> {
-
             if ("CANCELADA".equals(sale.getStatus())) {
                 return ResponseEntity.badRequest().body("La venta ya está cancelada.");
             }
 
             sale.setStatus("CANCELADA");
 
-            if (sale.getCollections() != null && !sale.getCollections().isEmpty()) {
-                sale.getCollections().forEach(collection -> {
+            if (sale.getAccountsReceivable() != null) {
 
+                sale.getAccountsReceivable().setStatus(AccountsReceivableStatus.CANCELLED);
+
+                sale.getAccountsReceivable().getCollections().forEach(collection -> {
                     if (!"ANULADO".equals(collection.getStatus())) {
                         collection.setStatus("ANULADO");
-                        log.info("Cobranza ID {} anulada por cancelación de venta padre.", collection.getId());
                     }
                 });
             }
 
-
             saleRepository.save(sale);
-
-            log.info("Venta ID {} y sus cobros han sido cancelados.", id);
+            log.info("Venta ID {} anulada.", id);
             return ResponseEntity.ok().build();
         }).orElse(ResponseEntity.notFound().build());
     }
 }
-

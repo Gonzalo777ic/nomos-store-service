@@ -1,10 +1,11 @@
 package com.nomos.store.service.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore; // Importante
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @Table(name = "sale_details")
@@ -16,9 +17,13 @@ public class SaleDetail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sale_id", nullable = false)
-    @JsonIgnoreProperties({"details", "collections"})
+
+
+    @JsonIgnore
+    @ToString.Exclude
     private Sale sale;
 
     @Column(name = "product_id", nullable = false)
