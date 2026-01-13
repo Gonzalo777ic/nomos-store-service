@@ -48,6 +48,12 @@ public class AccountsReceivable {
     @Column(name = "status", nullable = false, length = 20)
     private AccountsReceivableStatus status;
 
+    @OneToMany(mappedBy = "accountsReceivable", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @Builder.Default
+    private List<CreditDocument> creditDocuments = new ArrayList<>();
+
 
     public Double getPaidAmount() {
 
