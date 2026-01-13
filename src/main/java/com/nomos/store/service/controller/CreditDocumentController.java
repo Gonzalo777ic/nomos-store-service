@@ -32,6 +32,11 @@ public class CreditDocumentController {
         private String debtorIdNumber;
         private String documentNumber;
         private String legalNotes;
+
+        private String placeOfIssue;
+        private String placeOfPayment;
+        private String guarantorName;
+        private String guarantorIdNumber;
     }
 
     @GetMapping("/ar/{arId}")
@@ -59,6 +64,11 @@ public class CreditDocumentController {
                 .documentNumber(payload.getDocumentNumber())
                 .status(CreditDocumentStatus.DRAFT)
                 .legalNotes(payload.getLegalNotes())
+
+                .placeOfIssue(payload.getPlaceOfIssue())
+                .placeOfPayment(payload.getPlaceOfPayment())
+                .guarantorName(payload.getGuarantorName())
+                .guarantorIdNumber(payload.getGuarantorIdNumber())
                 .build();
 
         return ResponseEntity.ok(creditDocumentRepository.save(doc));

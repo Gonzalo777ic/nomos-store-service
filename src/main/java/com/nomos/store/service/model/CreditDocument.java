@@ -53,6 +53,9 @@ public class CreditDocument {
     @Column(name = "guarantor_name")
     private String guarantorName;
 
+    @Column(name = "guarantor_id_number")
+    private String guarantorIdNumber;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private CreditDocumentStatus status;
