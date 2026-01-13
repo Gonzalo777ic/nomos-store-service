@@ -1,6 +1,6 @@
 package com.nomos.store.service.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore; // Importante
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

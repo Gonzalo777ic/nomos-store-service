@@ -35,7 +35,7 @@ public class Collection {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "installment_id")
-    @JsonIgnore // <--- AGREGAR ESTO. Evita que Jackson toque el proxy de la cuota.
+    @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Installment installment;

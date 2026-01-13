@@ -40,7 +40,7 @@ public class CollectionController {
     }
 
     @PostMapping
-    @Transactional // IMPORTANTE: Para que los cambios en Installments se guarden por Dirty Checking
+    @Transactional
     public ResponseEntity<?> createCollection(@RequestBody CollectionPayload payload) {
 
         Sale sale = saleRepository.findById(payload.getSaleId())
@@ -63,8 +63,8 @@ public class CollectionController {
         }
 
         Collection collection = Collection.builder()
-                .sale(sale) // Mantenemos referencia legacy
-                .accountsReceivable(ar) // Nueva referencia financiera
+                .sale(sale)
+                .accountsReceivable(ar)
                 .amount(payload.getAmount())
                 .paymentMethod(paymentMethod)
                 .referenceNumber(payload.getReferenceNumber())

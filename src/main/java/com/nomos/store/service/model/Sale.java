@@ -2,7 +2,7 @@ package com.nomos.store.service.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import lombok.*; // Importante importar todo de lombok
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -50,13 +50,13 @@ public class Sale {
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnoreProperties("sale")
     @Builder.Default
-    @ToString.Exclude // <--- EVITA CICLO INFINITO
-    @EqualsAndHashCode.Exclude // <--- EVITA CICLO INFINITO
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<SaleDetail> details = new ArrayList<>();
 
     @OneToOne(mappedBy = "sale", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JsonIgnoreProperties("sale")
-    @ToString.Exclude // <--- CRUCIAL: Rompe el ciclo con AccountsReceivable
+    @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private AccountsReceivable accountsReceivable;
 

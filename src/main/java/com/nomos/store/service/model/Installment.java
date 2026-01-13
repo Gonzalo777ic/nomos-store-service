@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 @Entity
 @Table(name = "installments")
@@ -50,8 +51,28 @@ public class Installment {
 
 
     /**
-     * Calcula cuánto falta por pagar en esta cuota.
+     * Calcula la mora al día de hoy según la regla:
+     * Mora = SaldoVencido * 0.9% * (DíasAtraso / 30)
      */
+    public Double getPenaltyAmount() {
+
+
+        if (this.status == InstallmentStatus.PAID || this.dueDate.isAfter(LocalDate.now().minusDays(1))) {
+            return 0.0;
+        }
+
+        long daysLate = ChronoUnit.DAYS.between(this.dueDate, LocalDate.now());
+
+        if (daysLate <= 0) return 0.0;
+
+        double pendingAmount = this.expectedAmount - (this.paidAmount != null ? this.paidAmount : 0.0);
+
+        double penalty = pendingAmount * 0.009 * (daysLate / 30.0);
+
+        return Math.round(penalty * 100.0) / 100.0;
+    }
+
+
     public Double getPendingAmount() {
         if (expectedAmount == null) return 0.0;
         return expectedAmount - (paidAmount != null ? paidAmount : 0.0);
@@ -61,12 +82,8 @@ public class Installment {
         return paidAmount >= expectedAmount - 0.01;
     }
 
-    /**
-     * Verifica vencimiento sin cambiar estado interno.
-     */
     public boolean isOverdue(LocalDate referenceDate) {
         if (this.status == InstallmentStatus.PAID) return false;
-
         return this.status == InstallmentStatus.OVERDUE || referenceDate.isAfter(dueDate);
     }
 

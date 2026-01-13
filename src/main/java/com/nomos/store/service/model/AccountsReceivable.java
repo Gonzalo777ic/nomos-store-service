@@ -24,7 +24,7 @@ public class AccountsReceivable {
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sale_id", nullable = false, unique = true)
     @JsonIgnoreProperties("accountsReceivable")
-    @ToString.Exclude // <--- CRUCIAL
+    @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Sale sale;
 
@@ -32,9 +32,9 @@ public class AccountsReceivable {
     private Double totalAmount;
 
     @OneToMany(mappedBy = "accountsReceivable", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude // <--- Evita imprimir lista gigante de cuotas en logs
+    @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @Builder.Default // Para que el builder inicialice la lista
+    @Builder.Default
     private List<Installment> installments = new ArrayList<>();
 
     @OneToMany(mappedBy = "accountsReceivable", cascade = CascadeType.ALL)

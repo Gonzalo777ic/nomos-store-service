@@ -42,6 +42,7 @@ public class SaleController {
     public static class SaleCreationRequest {
         private Long clientId;
         private LocalDateTime saleDate;
+        private LocalDate creditStartDate;
         private String type;
         private String paymentCondition;
         private Integer creditDays;
@@ -84,23 +85,44 @@ public class SaleController {
     @Transactional
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
     public ResponseEntity<?> createSale(@RequestBody SaleCreationRequest request) {
-        log.info("Creando venta y estructura financiera para Cliente ID: {}", request.getClientId());
+        log.info("Creando venta. Emisión: {}. Inicio Crédito: {}", request.getSaleDate(), request.getCreditStartDate());
 
         try {
 
             if (request.getSellerId() == null || request.getSaleDate() == null) {
-                return ResponseEntity.badRequest().body("Faltan datos obligatorios (Vendedor o Fecha)");
+                return ResponseEntity.badRequest().body("Faltan datos obligatorios");
             }
             if (request.getDetails() == null || request.getDetails().isEmpty()) {
                 return ResponseEntity.badRequest().body("La venta debe tener al menos un detalle");
             }
 
-            SaleTypeEnum saleType = SaleTypeEnum.valueOf(request.getType().toUpperCase());
-            PaymentConditionEnum paymentCondition = PaymentConditionEnum.valueOf(request.getPaymentCondition().toUpperCase());
-
             double totalAmount = request.getDetails().stream()
                     .mapToDouble(SaleRequestDetail::getSubtotal)
                     .sum();
+
+            SaleTypeEnum saleType = SaleTypeEnum.valueOf(request.getType().toUpperCase());
+            PaymentConditionEnum paymentCondition = PaymentConditionEnum.valueOf(request.getPaymentCondition().toUpperCase());
+
+
+            LocalDate finalDueDate;
+
+            if (paymentCondition == PaymentConditionEnum.CONTADO) {
+
+                finalDueDate = request.getSaleDate().toLocalDate();
+            } else {
+
+
+                LocalDate baseDate = (request.getCreditStartDate() != null)
+                        ? request.getCreditStartDate()
+                        : request.getSaleDate().toLocalDate();
+
+                int months = (request.getNumberOfInstallments() != null && request.getNumberOfInstallments() > 0)
+                        ? request.getNumberOfInstallments()
+                        : 1;
+
+                finalDueDate = baseDate.plusMonths(months);
+            }
+
 
             Sale newSale = Sale.builder()
                     .clientId(request.getClientId())
@@ -111,37 +133,35 @@ public class SaleController {
                     .totalAmount(totalAmount)
                     .totalDiscount(0.0)
                     .status("EMITIDA")
-                    .dueDate(request.getSaleDate().plusDays(paymentCondition == PaymentConditionEnum.CREDITO ? (request.getCreditDays() != null ? request.getCreditDays() : 0) : 0))
+                    .dueDate(LocalDateTime.of(finalDueDate, request.getSaleDate().toLocalTime()))
                     .creditDays(request.getCreditDays())
                     .build();
-
 
             Sale savedSale = saleRepository.save(newSale);
 
             AccountsReceivable ar = AccountsReceivable.builder()
-                    .sale(savedSale) // Ahora savedSale tiene ID real
+                    .sale(savedSale)
                     .totalAmount(totalAmount)
                     .status(AccountsReceivableStatus.ACTIVE)
                     .build();
+
+
+            LocalDate baseCalculationDate = (request.getCreditStartDate() != null)
+                    ? request.getCreditStartDate()
+                    : request.getSaleDate().toLocalDate();
 
             Integer installmentsCount = request.getNumberOfInstallments();
             List<Installment> installments = generateInstallments(
                     ar,
                     paymentCondition,
                     installmentsCount,
-                    request.getSaleDate().toLocalDate(),
+                    baseCalculationDate,
                     totalAmount
             );
             ar.setInstallments(installments);
 
-
-
-
-
-
-
             savedSale.setAccountsReceivable(ar);
-            savedSale = saleRepository.save(savedSale); // Re-guardar para activar cascade y actualizar referencia
+            savedSale = saleRepository.save(savedSale);
 
             for (SaleRequestDetail d : request.getDetails()) {
                 SaleDetail detail = new SaleDetail();
@@ -162,7 +182,6 @@ public class SaleController {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             log.error("Error creando venta", e);
-
             throw new RuntimeException("Error interno al crear venta: " + e.getMessage());
         }
     }
@@ -171,40 +190,37 @@ public class SaleController {
         List<Installment> installments = new ArrayList<>();
 
         if (condition == PaymentConditionEnum.CONTADO) {
-
             installments.add(Installment.builder()
                     .accountsReceivable(ar)
                     .number(1)
                     .expectedAmount(totalAmount)
                     .dueDate(baseDate)
-                    .status(InstallmentStatus.PENDING) // El frontend maneja la lógica de visualización
+                    .status(InstallmentStatus.PENDING)
                     .build());
         } else {
 
             int n = (numberOfInstallments != null && numberOfInstallments > 0) ? numberOfInstallments : 1;
 
-
             double rawAmount = totalAmount / n;
-            double roundedAmount = Math.round(rawAmount * 100.0) / 100.0; // 2 decimales
-
+            double roundedAmount = Math.round(rawAmount * 100.0) / 100.0;
             double accumulated = 0.0;
 
             for (int i = 1; i <= n; i++) {
                 double currentAmount;
-
                 if (i == n) {
                     currentAmount = Math.round((totalAmount - accumulated) * 100.0) / 100.0;
                 } else {
                     currentAmount = roundedAmount;
                 }
-
                 accumulated += currentAmount;
 
                 installments.add(Installment.builder()
                         .accountsReceivable(ar)
                         .number(i)
                         .expectedAmount(currentAmount)
-                        .dueDate(baseDate.plusMonths(i)) // Frecuencia Mensual
+
+
+                        .dueDate(baseDate.plusMonths(i))
                         .status(InstallmentStatus.PENDING)
                         .build());
             }
