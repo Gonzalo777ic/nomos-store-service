@@ -50,6 +50,7 @@ public class AccountsReceivable {
 
 
     public Double getPaidAmount() {
+
         if (collections == null) return 0.0;
         return collections.stream()
                 .filter(c -> !"ANULADO".equals(c.getStatus()))
@@ -58,14 +59,12 @@ public class AccountsReceivable {
     }
 
     public Double getBalance() {
-        return totalAmount - getPaidAmount();
-    }
 
-    public boolean hasOverdueInstallments() {
-        if (installments == null) return false;
-        LocalDate today = LocalDate.now();
-        return installments.stream()
-                .anyMatch(i -> i.isOverdue(today));
+
+
+
+        double paidCapital = installments.stream().mapToDouble(Installment::getPaidAmount).sum();
+        return totalAmount - paidCapital;
     }
 
     public void applyPayment(Collection collection, Installment specificInstallment) {
@@ -76,34 +75,40 @@ public class AccountsReceivable {
         this.collections.add(collection);
         collection.setAccountsReceivable(this);
 
-        double amountToDistribute = collection.getAmount();
+        double amountRemaining = collection.getAmount();
 
         if (specificInstallment != null) {
-            specificInstallment.addPayment(amountToDistribute);
+
+
+            specificInstallment.applyPaymentLogic(amountRemaining);
         } else {
+
             List<Installment> pending = this.installments.stream()
-                    .filter(i -> !i.isFullyPaid())
+
+                    .filter(i -> i.getStatus() != InstallmentStatus.PAID)
                     .sorted(Comparator.comparing(Installment::getDueDate))
                     .toList();
-            for (Installment inst : pending) {
-                if (amountToDistribute <= 0) break;
 
-                double pendingAmount = inst.getPendingAmount();
-                double payment = Math.min(pendingAmount, amountToDistribute);
-                inst.addPayment(payment);
-                amountToDistribute -= payment;
+            for (Installment inst : pending) {
+                if (amountRemaining <= 0.001) break;
+
+
+                amountRemaining = inst.applyPaymentLogic(amountRemaining);
             }
         }
         updateStatus();
     }
 
     private void updateStatus() {
-        if (getBalance() <= 0.01) {
+
+        boolean allPaid = installments.stream()
+                .allMatch(i -> i.getStatus() == InstallmentStatus.PAID);
+
+        if (allPaid) {
             this.status = AccountsReceivableStatus.PAID;
         } else {
-            if (this.status != AccountsReceivableStatus.BAD_DEBT) {
-                this.status = AccountsReceivableStatus.ACTIVE;
-            }
+
+            this.status = AccountsReceivableStatus.ACTIVE;
         }
     }
 }
