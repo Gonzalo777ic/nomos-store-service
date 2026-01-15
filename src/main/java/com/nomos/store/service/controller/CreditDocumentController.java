@@ -3,6 +3,7 @@ package com.nomos.store.service.controller;
 import com.nomos.store.service.model.*;
 import com.nomos.store.service.repository.AccountsReceivableRepository;
 import com.nomos.store.service.repository.CreditDocumentRepository;
+import com.nomos.store.service.repository.LegalEntityRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,7 @@ public class CreditDocumentController {
 
     private final CreditDocumentRepository creditDocumentRepository;
     private final AccountsReceivableRepository arRepository;
+    private final LegalEntityRepository legalEntityRepository;
 
     @Data
     public static class CreditDocumentPayload {
@@ -28,29 +30,49 @@ public class CreditDocumentController {
         private Double amount;
         private LocalDate issueDate;
         private LocalDate dueDate;
+
         private String debtorName;
         private String debtorIdNumber;
-        private String documentNumber;
-        private String legalNotes;
 
-        private String placeOfIssue;
-        private String placeOfPayment;
+        private Long creditorEntityId;
+
         private String guarantorName;
         private String guarantorIdNumber;
-    }
 
+        private String documentNumber;
+        private String legalNotes;
+        private String placeOfIssue;
+        private String placeOfPayment;
+    }
     @GetMapping("/ar/{arId}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
     public ResponseEntity<List<CreditDocument>> getByAccount(@PathVariable Long arId) {
         return ResponseEntity.ok(creditDocumentRepository.findByAccountsReceivableId(arId));
     }
 
+    @GetMapping("/legal-entities")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
+    public ResponseEntity<List<LegalEntity>> getAllLegalEntities() {
+        return ResponseEntity.ok(legalEntityRepository.findAll());
+    }
+
     @PostMapping
     @Transactional
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
     public ResponseEntity<?> create(@RequestBody CreditDocumentPayload payload) {
+
         AccountsReceivable ar = arRepository.findById(payload.getAccountsReceivableId())
                 .orElseThrow(() -> new RuntimeException("Cuenta por cobrar no encontrada"));
+
+        LegalEntity creditorEntity;
+
+        if (payload.getCreditorEntityId() != null) {
+            creditorEntity = legalEntityRepository.findById(payload.getCreditorEntityId())
+                    .orElseThrow(() -> new RuntimeException("Entidad legal acreedora no encontrada"));
+        } else {
+            creditorEntity = legalEntityRepository.findAll().stream().findFirst()
+                    .orElseThrow(() -> new RuntimeException("No hay ninguna Entidad Legal registrada en el sistema."));
+        }
 
         CreditDocument doc = CreditDocument.builder()
                 .accountsReceivable(ar)
@@ -58,13 +80,15 @@ public class CreditDocumentController {
                 .amount(payload.getAmount())
                 .issueDate(payload.getIssueDate())
                 .dueDate(payload.getDueDate())
+
                 .debtorName(payload.getDebtorName())
                 .debtorIdNumber(payload.getDebtorIdNumber())
-                .creditorName("MI EMPRESA S.A.C.")
+
+                .creditor(creditorEntity)
+
                 .documentNumber(payload.getDocumentNumber())
                 .status(CreditDocumentStatus.DRAFT)
                 .legalNotes(payload.getLegalNotes())
-
                 .placeOfIssue(payload.getPlaceOfIssue())
                 .placeOfPayment(payload.getPlaceOfPayment())
                 .guarantorName(payload.getGuarantorName())

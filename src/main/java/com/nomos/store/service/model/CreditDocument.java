@@ -47,8 +47,9 @@ public class CreditDocument {
     @Column(name = "debtor_id_number")
     private String debtorIdNumber;
 
-    @Column(name = "creditor_name")
-    private String creditorName;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "creditor_entity_id", nullable = false)
+    private LegalEntity creditor;
 
     @Column(name = "guarantor_name")
     private String guarantorName;
