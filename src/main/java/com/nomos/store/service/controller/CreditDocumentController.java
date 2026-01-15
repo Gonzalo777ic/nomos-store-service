@@ -106,4 +106,19 @@ public class CreditDocumentController {
             return ResponseEntity.ok(creditDocumentRepository.save(doc));
         }).orElse(ResponseEntity.notFound().build());
     }
+
+    @DeleteMapping("/{id}")
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        return creditDocumentRepository.findById(id).map(doc -> {
+            if (doc.getStatus() != CreditDocumentStatus.DRAFT) {
+                return ResponseEntity.badRequest()
+                        .body("No se puede eliminar un documento que ya ha sido firmado o procesado.");
+            }
+
+            creditDocumentRepository.delete(doc);
+            return ResponseEntity.noContent().build();
+        }).orElse(ResponseEntity.notFound().build());
+    }
 }
