@@ -67,6 +67,12 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.librepdf</groupId>
+            <artifactId>openpdf</artifactId>
+            <version>1.3.30</version>
+        </dependency>
+
         <!-- Se eliminaron las dependencias jjwt-api, jjwt-impl y jjwt-jackson,
              ya que Spring Security las maneja con las dependencias de OAuth2 Resource Server. -->
     </dependencies>

@@ -4,8 +4,13 @@ import com.nomos.store.service.model.*;
 import com.nomos.store.service.repository.AccountsReceivableRepository;
 import com.nomos.store.service.repository.CreditDocumentRepository;
 import com.nomos.store.service.repository.LegalEntityRepository;
+import com.nomos.store.service.service.CreditDocumentPdfService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +23,9 @@ import java.util.List;
 @RequestMapping("/api/store/credit-documents")
 @RequiredArgsConstructor
 public class CreditDocumentController {
+
+    @Autowired
+    private CreditDocumentPdfService pdfService;
 
     private final CreditDocumentRepository creditDocumentRepository;
     private final AccountsReceivableRepository arRepository;
@@ -121,4 +129,27 @@ public class CreditDocumentController {
             return ResponseEntity.noContent().build();
         }).orElse(ResponseEntity.notFound().build());
     }
+
+
+    @GetMapping("/{id}/pdf")
+    public ResponseEntity<?> getPdf(@PathVariable Long id) {
+        try {
+            byte[] pdfBytes = pdfService.generatePdf(id);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=documento_" + id + ".pdf")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(pdfBytes);
+
+        } catch (IllegalStateException e) {
+
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error generando el documento");
+        }
+    }
+
+
 }

@@ -10,12 +10,12 @@ import java.util.List;
 public interface PromotionTargetRepository extends JpaRepository<PromotionTarget, Long> {
 
     /**
-     * Encuentra todos los objetivos de una promoción específica (e.g., para mostrar en el modal de edición).
+     * Encuentra todos los objetivos de una promoción específica
      */
     List<PromotionTarget> findByPromotionId(Long promotionId);
 
     /**
-     * Elimina todos los objetivos de una promoción (útil antes de una actualización masiva).
+     * Elimina todos los objetivos de una promoción
      */
     void deleteByPromotionId(Long promotionId);
 }
