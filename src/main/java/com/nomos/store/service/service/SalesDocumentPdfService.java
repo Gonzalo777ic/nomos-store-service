@@ -53,12 +53,12 @@ public class SalesDocumentPdfService {
         PdfPCell clientCell = new PdfPCell();
         clientCell.setBorder(Rectangle.NO_BORDER);
         clientCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
-        clientCell.addElement(new Paragraph("CLIENTE ID: " + doc.getSale().getClientId())); // Aquí deberías buscar el nombre real del cliente
+        clientCell.addElement(new Paragraph("CLIENTE ID: " + doc.getSale().getClientId()));
         clientCell.addElement(new Paragraph("Fecha Emisión: " + doc.getIssueDate().format(DateTimeFormatter.ISO_DATE)));
         table.addCell(clientCell);
 
         document.add(table);
-        document.add(new Paragraph(" ")); // Espacio
+        document.add(new Paragraph(" "));
     }
 
     private void addDocumentTitle(Document document, SalesDocument doc) throws DocumentException {
@@ -83,7 +83,7 @@ public class SalesDocumentPdfService {
     }
 
     private void addDetailsTable(Document document, SalesDocument doc) throws DocumentException {
-        PdfPTable table = new PdfPTable(new float[]{1, 4, 2, 2}); // Columnas relativas
+        PdfPTable table = new PdfPTable(new float[]{1, 4, 2, 2});
         table.setWidthPercentage(100);
 
         String[] headers = {"Cant.", "Descripción / Producto", "P. Unit", "Total"};

@@ -16,7 +16,7 @@ public class SalesDocumentService {
     private SalesDocumentRepository documentRepository;
 
     @Autowired
-    private SaleRepository saleRepository; // Necesario para buscar la venta original
+    private SaleRepository saleRepository;
 
     @Autowired
     private SalesDocumentPdfService pdfService;
@@ -34,7 +34,7 @@ public class SalesDocumentService {
         String series = (type == SalesDocumentType.FACTURA) ? "F001" : "B001";
 
         long count = documentRepository.countBySeries(series);
-        String number = String.format("%08d", count + 1); // Ej: 00000023
+        String number = String.format("%08d", count + 1);
 
         SalesDocument doc = SalesDocument.builder()
                 .sale(sale)
@@ -42,7 +42,7 @@ public class SalesDocumentService {
                 .series(series)
                 .number(number)
                 .issueDate(LocalDateTime.now())
-                .status(SalesDocumentStatus.ISSUED) // Ya nace "Emitido"
+                .status(SalesDocumentStatus.ISSUED)
                 .totalAmount(sale.getTotalAmount())
                 .build();
 

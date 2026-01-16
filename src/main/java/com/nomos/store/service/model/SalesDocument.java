@@ -21,7 +21,7 @@ public class SalesDocument {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sale_id", nullable = false)
-    @JsonIgnore // Evitar ciclos infinitos al serializar
+    @JsonIgnore
     @ToString.Exclude
     private Sale sale;
 
@@ -56,7 +56,7 @@ public class SalesDocument {
     private String xmlUrl;
 
     @Column(name = "cdr_url")
-    private String cdrUrl; // Constancia de Recepción
+    private String cdrUrl;
 
     @Column(name = "response_message", columnDefinition = "TEXT")
     private String responseMessage;
