@@ -67,6 +67,14 @@ public class Sale {
     private Integer creditDays;
 
 
+    @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnoreProperties("sale")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @Builder.Default
+    private List<SalesDocument> documents = new ArrayList<>();
+
+
     public Double getPaidAmount() {
         return accountsReceivable != null ? accountsReceivable.getPaidAmount() : 0.0;
     }
@@ -88,5 +96,12 @@ public class Sale {
 
         return accountsReceivable.getInstallments().stream()
                 .anyMatch(i -> i.isOverdue(today));
+    }
+
+    public boolean hasFiscalDocument() {
+        if (documents == null || documents.isEmpty()) return false;
+        return documents.stream()
+                .anyMatch(d -> d.getStatus() != SalesDocumentStatus.VOIDED &&
+                        d.getStatus() != SalesDocumentStatus.REJECTED);
     }
 }
