@@ -75,7 +75,9 @@ public class Sale {
     private List<SalesDocument> documents = new ArrayList<>();
 
     @OneToMany(mappedBy = "sale", fetch = FetchType.LAZY)
-    @JsonIgnoreProperties("sale")
+
+
+    @JsonIgnoreProperties({"sale", "hibernateLazyInitializer", "handler"})
     private List<SaleReturn> returns = new ArrayList<>();
 
 

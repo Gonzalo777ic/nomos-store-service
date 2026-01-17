@@ -1,5 +1,6 @@
 package com.nomos.store.service.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
@@ -22,7 +23,10 @@ public class SaleReturn {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sale_id", nullable = false)
-    @JsonIgnoreProperties({"returns", "details", "documents", "hibernateLazyInitializer", "handler"})
+
+
+
+    @JsonIgnore
     private Sale sale;
 
     @Column(name = "return_date", nullable = false)

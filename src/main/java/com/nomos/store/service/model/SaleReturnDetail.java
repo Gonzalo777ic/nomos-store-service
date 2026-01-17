@@ -26,7 +26,6 @@ public class SaleReturnDetail {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "original_sale_detail_id", nullable = false)
-
     @JsonIgnoreProperties({"sale", "hibernateLazyInitializer", "handler"})
     private SaleDetail originalSaleDetail;
 
