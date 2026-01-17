@@ -118,4 +118,8 @@ public class SaleReturnService {
     public List<SaleReturn> findBySaleId(Long saleId) {
         return returnRepository.findBySaleId(saleId);
     }
+
+    public List<SaleReturn> findAll() {
+        return returnRepository.findAll();
+    }
 }
