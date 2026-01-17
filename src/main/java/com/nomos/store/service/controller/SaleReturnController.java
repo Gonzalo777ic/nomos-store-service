@@ -21,6 +21,8 @@ public class SaleReturnController {
 
 
 
+
+
     @Data
     public static class ReturnRequest {
         private Long saleId;
@@ -62,8 +64,15 @@ public class SaleReturnController {
         return ResponseEntity.ok(confirmedReturn);
     }
 
+    @GetMapping
+    public ResponseEntity<List<SaleReturn>> getAllReturns() {
+        return ResponseEntity.ok(saleReturnService.findAll());
+    }
+
     @GetMapping("/sale/{saleId}")
     public ResponseEntity<List<SaleReturn>> getReturnsBySale(@PathVariable Long saleId) {
         return ResponseEntity.ok(saleReturnService.findBySaleId(saleId));
     }
+
+
 }
