@@ -4,12 +4,14 @@ import com.lowagie.text.*;
 import com.lowagie.text.pdf.*;
 import com.nomos.store.service.model.SaleDetail;
 import com.nomos.store.service.model.SalesDocument;
+import com.nomos.store.service.model.SalesDocumentType;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.Optional;
 
 @Service
 public class SalesDocumentPdfService {
@@ -24,11 +26,13 @@ public class SalesDocumentPdfService {
             document.open();
 
             addHeader(document, doc);
-
             addDocumentTitle(document, doc);
 
-            addDetailsTable(document, doc);
+            if (doc.getType() == SalesDocumentType.NOTA_CREDITO) {
+                addReferenceDocument(document, doc);
+            }
 
+            addDetailsTable(document, doc);
             addTotals(document, doc);
 
             document.close();
@@ -53,8 +57,11 @@ public class SalesDocumentPdfService {
         PdfPCell clientCell = new PdfPCell();
         clientCell.setBorder(Rectangle.NO_BORDER);
         clientCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+
+        String dateLabel = (doc.getType() == SalesDocumentType.NOTA_CREDITO) ? "Fecha Emisión NC:" : "Fecha Emisión:";
+
         clientCell.addElement(new Paragraph("CLIENTE ID: " + doc.getSale().getClientId()));
-        clientCell.addElement(new Paragraph("Fecha Emisión: " + doc.getIssueDate().format(DateTimeFormatter.ISO_DATE)));
+        clientCell.addElement(new Paragraph(dateLabel + " " + doc.getIssueDate().format(DateTimeFormatter.ISO_DATE)));
         table.addCell(clientCell);
 
         document.add(table);
@@ -70,23 +77,51 @@ public class SalesDocumentPdfService {
         cell.setPadding(10);
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);
 
-        String typeName = doc.getType().name().replace("_", " ");
+        String typeName;
+        if (doc.getType() == SalesDocumentType.NOTA_CREDITO) {
+            typeName = "NOTA DE CRÉDITO ELECTRÓNICA";
+        } else {
+            typeName = doc.getType().name().replace("_", " ") + " ELECTRÓNICA";
+        }
+
         String fullNumber = doc.getSeries() + "-" + doc.getNumber();
 
-        Paragraph p = new Paragraph(typeName + " ELECTRÓNICA\n" + fullNumber, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16));
+        Paragraph p = new Paragraph(typeName + "\n" + fullNumber, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16));
         p.setAlignment(Element.ALIGN_CENTER);
 
         cell.addElement(p);
         table.addCell(cell);
         document.add(table);
-        document.add(new Paragraph(" "));
+    }
+
+    private void addReferenceDocument(Document document, SalesDocument creditNote) throws DocumentException {
+
+        Optional<SalesDocument> refDoc = creditNote.getSale().getDocuments().stream()
+                .filter(d -> d.getType() == SalesDocumentType.FACTURA || d.getType() == SalesDocumentType.BOLETA)
+                .filter(d -> !d.getStatus().name().equals("VOIDED"))
+                .findFirst();
+
+        if (refDoc.isPresent()) {
+            SalesDocument original = refDoc.get();
+            Paragraph pRef = new Paragraph();
+            pRef.add(new Chunk("Documento que modifica: ", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10)));
+            pRef.add(new Chunk(original.getType() + " " + original.getSeries() + "-" + original.getNumber(), FontFactory.getFont(FontFactory.HELVETICA, 10)));
+
+            if (creditNote.getResponseMessage() != null) {
+                pRef.add(Chunk.NEWLINE);
+                pRef.add(new Chunk("Motivo: " + creditNote.getResponseMessage(), FontFactory.getFont(FontFactory.HELVETICA, 10)));
+            }
+
+            document.add(pRef);
+            document.add(new Paragraph(" "));
+        }
     }
 
     private void addDetailsTable(Document document, SalesDocument doc) throws DocumentException {
         PdfPTable table = new PdfPTable(new float[]{1, 4, 2, 2});
         table.setWidthPercentage(100);
 
-        String[] headers = {"Cant.", "Descripción / Producto", "P. Unit", "Total"};
+        String[] headers = {"Cant.", "Descripción", "P. Unit", "Total"};
         for (String h : headers) {
             PdfPCell c = new PdfPCell(new Phrase(h, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10)));
             c.setBackgroundColor(java.awt.Color.WHITE);
@@ -94,9 +129,11 @@ public class SalesDocumentPdfService {
             table.addCell(c);
         }
 
+
+
+
         for (SaleDetail detail : doc.getSale().getDetails()) {
             table.addCell(String.valueOf(detail.getQuantity()));
-
             table.addCell("Producto ID: " + detail.getProductId());
             table.addCell(formatCurrency(detail.getUnitPrice()));
             table.addCell(formatCurrency(detail.getSubtotal()));
@@ -110,7 +147,9 @@ public class SalesDocumentPdfService {
         table.setWidthPercentage(100);
         table.setSpacingBefore(10);
 
-        PdfPCell label = new PdfPCell(new Phrase("TOTAL A PAGAR:", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12)));
+        String labelText = (doc.getType() == SalesDocumentType.NOTA_CREDITO) ? "TOTAL DEVOLUCIÓN:" : "TOTAL A PAGAR:";
+
+        PdfPCell label = new PdfPCell(new Phrase(labelText, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12)));
         label.setBorder(Rectangle.NO_BORDER);
         label.setHorizontalAlignment(Element.ALIGN_RIGHT);
 

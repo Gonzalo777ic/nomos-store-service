@@ -22,7 +22,7 @@ public class SaleReturn {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sale_id", nullable = false)
-    @JsonIgnoreProperties({"returns", "details", "documents"})
+    @JsonIgnoreProperties({"returns", "details", "documents", "hibernateLazyInitializer", "handler"})
     private Sale sale;
 
     @Column(name = "return_date", nullable = false)
@@ -44,6 +44,7 @@ public class SaleReturn {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sales_document_id")
+    @JsonIgnoreProperties({"sale", "documents", "hibernateLazyInitializer", "handler"})
     private SalesDocument creditNote;
 
     @OneToMany(mappedBy = "saleReturn", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

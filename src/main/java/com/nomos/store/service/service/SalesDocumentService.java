@@ -59,4 +59,30 @@ public class SalesDocumentService {
 
         return pdfService.generatePdf(doc);
     }
+
+
+    @Transactional
+    public SalesDocument issueCreditNote(Long saleId, Double amount, String reason) {
+        Sale sale = saleRepository.findById(saleId)
+                .orElseThrow(() -> new RuntimeException("Venta no encontrada"));
+
+        boolean isFactura = "FACTURA".equals(sale.getType().name());
+        String series = isFactura ? "FC01" : "BC01";
+
+        long count = documentRepository.countBySeries(series);
+        String number = String.format("%08d", count + 1);
+
+        SalesDocument doc = SalesDocument.builder()
+                .sale(sale)
+                .type(SalesDocumentType.NOTA_CREDITO)
+                .series(series)
+                .number(number)
+                .issueDate(LocalDateTime.now())
+                .status(SalesDocumentStatus.ISSUED)
+                .totalAmount(amount)
+                .responseMessage(reason)
+                .build();
+
+        return documentRepository.save(doc);
+    }
 }
