@@ -74,6 +74,10 @@ public class Sale {
     @Builder.Default
     private List<SalesDocument> documents = new ArrayList<>();
 
+    @OneToMany(mappedBy = "sale", fetch = FetchType.LAZY)
+    @JsonIgnoreProperties("sale")
+    private List<SaleReturn> returns = new ArrayList<>();
+
 
     public Double getPaidAmount() {
         return accountsReceivable != null ? accountsReceivable.getPaidAmount() : 0.0;
@@ -103,5 +107,18 @@ public class Sale {
         return documents.stream()
                 .anyMatch(d -> d.getStatus() != SalesDocumentStatus.VOIDED &&
                         d.getStatus() != SalesDocumentStatus.REJECTED);
+    }
+
+    public boolean hasReturns() {
+        return returns != null && !returns.isEmpty() &&
+                returns.stream().anyMatch(r -> r.getStatus() == SaleReturnStatus.CONFIRMED);
+    }
+
+    public Double getTotalReturnedAmount() {
+        if (returns == null) return 0.0;
+        return returns.stream()
+                .filter(r -> r.getStatus() == SaleReturnStatus.CONFIRMED)
+                .mapToDouble(SaleReturn::getTotalRefundAmount)
+                .sum();
     }
 }
