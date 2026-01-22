@@ -218,7 +218,6 @@ public class SaleService {
      * Genera el asiento contable de venta.
      */
     private void generateAccountingEntry(Sale sale) {
-        try {
             AccountingJournalEntry entry = new AccountingJournalEntry();
             entry.setEntryDate(LocalDateTime.now());
             entry.setConcept("Venta " + sale.getType() + " #" + sale.getId());
@@ -254,9 +253,5 @@ public class SaleService {
             entry.setLines(lines);
 
             accountingService.createEntry(entry);
-
-        } catch (Exception e) {
-            log.error("Error generando asiento contable para Venta #" + sale.getId(), e);
-        }
     }
 }
