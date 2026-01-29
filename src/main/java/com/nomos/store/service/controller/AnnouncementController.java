@@ -62,5 +62,14 @@ public class AnnouncementController {
         return ResponseEntity.ok(service.update(id, announcement));
     }
 
+    /**
+     * Alternar estado Activo/Inactivo (Switch rápido)
+     * PATCH /api/store/announcements/{id}/toggle
+     */
+    @PatchMapping("/{id}/toggle")
+    public ResponseEntity<Announcement> toggleActive(@PathVariable Long id) {
+        return ResponseEntity.ok(service.toggleActive(id));
+    }
+
 
 }
