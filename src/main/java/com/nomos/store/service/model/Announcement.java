@@ -40,5 +40,9 @@ public class Announcement {
 
     private String targetAudience;
 
-
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        if (this.isActive == false) this.isActive = true;
+    }
 }
