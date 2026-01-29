@@ -42,5 +42,14 @@ public class AnnouncementController {
         return ResponseEntity.ok(service.getById(id));
     }
 
+    /**
+     * Crear un nuevo anuncio
+     * POST /api/store/announcements
+     */
+    @PostMapping
+    public ResponseEntity<Announcement> create(@RequestBody Announcement announcement) {
+        return ResponseEntity.ok(service.create(announcement));
+    }
+
 
 }
