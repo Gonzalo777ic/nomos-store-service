@@ -68,6 +68,17 @@ public class AnnouncementService {
 
         return repository.save(existing);
     }
+    /**
+     * Cambia el estado de activo/inactivo de un anuncio.
+     * Útil para ocultar rápidamente un anuncio sin borrarlo.
+     */
+    @Transactional
+    public Announcement toggleActive(Long id) {
+        Announcement announcement = getById(id);
+        announcement.setActive(!announcement.isActive());
+        return repository.save(announcement);
+    }
+
 
 
 
