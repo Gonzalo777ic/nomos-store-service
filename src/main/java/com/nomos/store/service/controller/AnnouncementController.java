@@ -51,5 +51,16 @@ public class AnnouncementController {
         return ResponseEntity.ok(service.create(announcement));
     }
 
+    /**
+     * Actualizar un anuncio existente
+     * PUT /api/store/announcements/{id}
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<Announcement> update(
+            @PathVariable Long id,
+            @RequestBody Announcement announcement) {
+        return ResponseEntity.ok(service.update(id, announcement));
+    }
+
 
 }
