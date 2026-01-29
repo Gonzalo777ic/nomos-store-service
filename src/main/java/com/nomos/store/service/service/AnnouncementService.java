@@ -79,7 +79,16 @@ public class AnnouncementService {
         return repository.save(announcement);
     }
 
-
+    /**
+     * Elimina físicamente un anuncio.
+     */
+    @Transactional
+    public void delete(Long id) {
+        if (!repository.existsById(id)) {
+            throw new EntityNotFoundException("No se puede eliminar. Anuncio no encontrado con ID: " + id);
+        }
+        repository.deleteById(id);
+    }
 
 
     private void validateDates(LocalDateTime start, LocalDateTime end) {
