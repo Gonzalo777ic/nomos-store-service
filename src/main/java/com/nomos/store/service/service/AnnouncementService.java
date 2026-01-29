@@ -24,5 +24,13 @@ public class AnnouncementService {
         return repository.findActiveAnnouncements(LocalDateTime.now());
     }
 
+    /**
+     * Obtiene todos los anuncios (para el panel de administración).
+     * Podrías ordenarlos por fecha de creación descendente si quisieras.
+     */
+    public List<Announcement> getAll() {
+        return repository.findAll();
+    }
+
 
 }
