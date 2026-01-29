@@ -1,5 +1,6 @@
 package com.nomos.store.service.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,6 +34,8 @@ public class Announcement {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
 
+    @JsonProperty("isActive")
+    @Column(name = "is_active")
     private boolean isActive;
 
     @Column(nullable = false, updatable = false)
@@ -43,6 +46,5 @@ public class Announcement {
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
-        if (this.isActive == false) this.isActive = true;
     }
 }
