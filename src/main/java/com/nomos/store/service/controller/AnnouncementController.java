@@ -71,5 +71,13 @@ public class AnnouncementController {
         return ResponseEntity.ok(service.toggleActive(id));
     }
 
-
+    /**
+     * Eliminar físicamente un anuncio
+     * DELETE /api/store/announcements/{id}
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
+    }
 }
