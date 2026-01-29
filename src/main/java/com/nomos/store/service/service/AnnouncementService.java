@@ -48,6 +48,27 @@ public class AnnouncementService {
         return repository.save(announcement);
     }
 
+    /**
+     * Actualiza un anuncio existente.
+     */
+    @Transactional
+    public Announcement update(Long id, Announcement updatedData) {
+        Announcement existing = getById(id);
+
+        validateDates(updatedData.getStartDate(), updatedData.getEndDate());
+
+        existing.setTitle(updatedData.getTitle());
+        existing.setContent(updatedData.getContent());
+        existing.setType(updatedData.getType());
+        existing.setStartDate(updatedData.getStartDate());
+        existing.setEndDate(updatedData.getEndDate());
+        existing.setTargetAudience(updatedData.getTargetAudience());
+
+        existing.setActive(updatedData.isActive());
+
+        return repository.save(existing);
+    }
+
 
 
     private void validateDates(LocalDateTime start, LocalDateTime end) {
