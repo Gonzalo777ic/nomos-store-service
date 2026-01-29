@@ -24,5 +24,14 @@ public class AnnouncementController {
         return ResponseEntity.ok(service.getAll());
     }
 
+    /**
+     * Obtener solo anuncios activos y vigentes (Para mostrar al usuario final)
+     * GET /api/store/announcements/active
+     */
+    @GetMapping("/active")
+    public ResponseEntity<List<Announcement>> getActive() {
+        return ResponseEntity.ok(service.getActiveAnnouncements());
+    }
+
 
 }
