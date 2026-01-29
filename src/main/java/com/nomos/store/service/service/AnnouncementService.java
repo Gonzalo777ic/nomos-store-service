@@ -32,5 +32,13 @@ public class AnnouncementService {
         return repository.findAll();
     }
 
+    /**
+     * Busca un anuncio por ID o lanza excepción si no existe.
+     */
+    public Announcement getById(Long id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Anuncio no encontrado con ID: " + id));
+    }
+
 
 }
