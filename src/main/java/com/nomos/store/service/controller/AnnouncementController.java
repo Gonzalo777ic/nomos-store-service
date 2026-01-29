@@ -33,5 +33,14 @@ public class AnnouncementController {
         return ResponseEntity.ok(service.getActiveAnnouncements());
     }
 
+    /**
+     * Obtener un anuncio por ID
+     * GET /api/store/announcements/{id}
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<Announcement> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(service.getById(id));
+    }
+
 
 }
