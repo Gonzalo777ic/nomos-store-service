@@ -39,6 +39,23 @@ public class AnnouncementService {
         return repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Anuncio no encontrado con ID: " + id));
     }
+    /**
+     * Crea un nuevo anuncio validando la coherencia de las fechas.
+     */
+    @Transactional
+    public Announcement create(Announcement announcement) {
+        validateDates(announcement.getStartDate(), announcement.getEndDate());
+        return repository.save(announcement);
+    }
 
+
+
+    private void validateDates(LocalDateTime start, LocalDateTime end) {
+        if (start != null && end != null) {
+            if (start.isAfter(end)) {
+                throw new IllegalArgumentException("La fecha de inicio (startDate) no puede ser posterior a la fecha de fin (endDate).");
+            }
+        }
+    }
 
 }
