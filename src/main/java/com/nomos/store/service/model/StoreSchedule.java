@@ -1,5 +1,6 @@
 package com.nomos.store.service.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,9 +28,11 @@ public class StoreSchedule {
     @Column(name = "day_of_week", nullable = false, unique = true)
     private DayOfWeek dayOfWeek;
 
+    @JsonFormat(pattern = "HH:mm")
     @Column(name = "opening_time")
     private LocalTime openingTime;
 
+    @JsonFormat(pattern = "HH:mm")
     @Column(name = "closing_time")
     private LocalTime closingTime;
 

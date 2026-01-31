@@ -18,7 +18,7 @@ public class StoreStatusController {
     /**
      * Endpoint PRINCIPAL para saber si la tienda está atendiendo.
      * No requiere autenticación (generalmente) si es para mostrar en el e-commerce,
-     * pero para tu ERP probablemente sí requiera token.
+     * pero para ERP probablemente sí requiera token.
      */
     @GetMapping("/current")
     public ResponseEntity<StoreStatusDTO> getCurrentStatus() {
