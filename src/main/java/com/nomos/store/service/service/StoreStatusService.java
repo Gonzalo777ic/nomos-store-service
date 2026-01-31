@@ -23,6 +23,36 @@ public class StoreStatusService {
 
 
 
+    /**
+     * Combina Tabla Base + Tabla Excepciones para obtener la "Verdad" de un día específico.
+     * PRIORIDAD: Excepción > Horario Base
+     */
+    private EffectiveSchedule getEffectiveSchedule(LocalDate date) {
+        Optional<StoreScheduleException> exception = exceptionRepository.findByDate(date);
+        if (exception.isPresent()) {
+            StoreScheduleException ex = exception.get();
+            return new EffectiveSchedule(
+                    ex.isClosed(),
+                    ex.getOpeningTime(),
+                    ex.getClosingTime(),
+                    ex.getReason() // "Feriado", etc.
+            );
+        }
+
+        Optional<StoreSchedule> base = scheduleRepository.findByDayOfWeek(date.getDayOfWeek());
+        if (base.isPresent()) {
+            StoreSchedule sch = base.get();
+            return new EffectiveSchedule(
+                    !sch.isOpen(), // Si isOpen es false, isClosed es true
+                    sch.getOpeningTime(),
+                    sch.getClosingTime(),
+                    null
+            );
+        }
+
+        return new EffectiveSchedule(true, null, null, "Sin configuración");
+    }
+
     @lombok.Value
     private static class EffectiveSchedule {
         boolean isClosed;
