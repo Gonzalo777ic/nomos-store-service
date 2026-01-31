@@ -54,7 +54,13 @@ public class StoreScheduleExceptionService {
         return repository.save(existing);
     }
 
-
+    @Transactional
+    public void delete(Long id) {
+        if (!repository.existsById(id)) {
+            throw new EntityNotFoundException("Excepción no encontrada");
+        }
+        repository.deleteById(id);
+    }
 
 
 }
