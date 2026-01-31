@@ -23,6 +23,22 @@ public class StoreScheduleExceptionService {
     public List<StoreScheduleException> getUpcomingExceptions() {
         return repository.findByDateGreaterThanEqualOrderByDateAsc(LocalDate.now());
     }
+    /**
+     * Crea una nueva excepción (Feriado u Horario Especial).
+     */
+    @Transactional
+    public StoreScheduleException create(StoreScheduleException exception) {
+        if (exception.getDate().isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("No se pueden crear excepciones para fechas pasadas.");
+        }
+
+        if (repository.existsByDate(exception.getDate())) {
+            throw new IllegalArgumentException("Ya existe una configuración especial para la fecha " + exception.getDate());
+        }
+
+        return repository.save(exception);
+    }
+
 
 
 }
