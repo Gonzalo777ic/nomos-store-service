@@ -21,7 +21,71 @@ public class StoreStatusService {
     private final StoreScheduleRepository scheduleRepository;
     private final StoreScheduleExceptionRepository exceptionRepository;
 
+    /**
+     *  Calcula el estado actual basado en reglas y excepciones.
+     */
+    public StoreStatusDTO getCurrentStatus() {
+        LocalDateTime now = LocalDateTime.now();
 
+        EffectiveSchedule todaySchedule = getEffectiveSchedule(now.toLocalDate());
+
+        boolean isOpen = false;
+        String reason = "Fuera de horario";
+
+        if (todaySchedule.isClosed()) {
+            isOpen = false;
+            reason = todaySchedule.getReason() != null ? todaySchedule.getReason() : "No hay atención hoy";
+        } else {
+            LocalTime start = todaySchedule.getOpeningTime();
+            LocalTime end = todaySchedule.getClosingTime();
+            LocalTime timeNow = now.toLocalTime();
+
+            if (timeNow.isAfter(start) && timeNow.isBefore(end)) {
+                isOpen = true;
+                reason = "Horario de atención";
+            } else if (timeNow.isBefore(start)) {
+                isOpen = false;
+                reason = "Aún no abre";
+            } else {
+                isOpen = false;
+                reason = "Ya cerró";
+            }
+        }
+
+        if (isOpen) {
+            boolean closingSoon = now.toLocalTime().plusMinutes(30).isAfter(todaySchedule.getClosingTime());
+
+            return StoreStatusDTO.builder()
+                    .status("OPEN")
+                    .message("Abierto • Cierra " + formatTime(todaySchedule.getClosingTime()))
+                    .reason(reason)
+                    .currentClosing(LocalDateTime.of(now.toLocalDate(), todaySchedule.getClosingTime()))
+                    .closingSoon(closingSoon)
+                    .build();
+        } else {
+            LocalDateTime nextOpen = findNextOpening(now);
+
+            String msg = "Cerrado";
+            if (nextOpen != null) {
+                if (nextOpen.toLocalDate().equals(now.toLocalDate())) {
+                    msg = "Cerrado • Abre hoy a las " + formatTime(nextOpen.toLocalTime());
+                } else if (nextOpen.toLocalDate().equals(now.toLocalDate().plusDays(1))) {
+                    msg = "Cerrado • Abre mañana a las " + formatTime(nextOpen.toLocalTime());
+                } else {
+                    String dayName = mapDayName(nextOpen.getDayOfWeek().name());
+                    msg = "Cerrado • Abre el " + dayName + " " + formatTime(nextOpen.toLocalTime());
+                }
+            }
+
+            return StoreStatusDTO.builder()
+                    .status("CLOSED")
+                    .message(msg)
+                    .reason(reason)
+                    .nextOpening(nextOpen)
+                    .closingSoon(false)
+                    .build();
+        }
+    }
 
 
     /**
