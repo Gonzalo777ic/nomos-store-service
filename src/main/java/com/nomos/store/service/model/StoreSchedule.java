@@ -30,5 +30,8 @@ public class StoreSchedule {
     @Column(name = "opening_time")
     private LocalTime openingTime;
 
+    @Column(name = "closing_time")
+    private LocalTime closingTime;
+
 
 }
