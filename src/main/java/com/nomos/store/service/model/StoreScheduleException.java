@@ -38,5 +38,17 @@ public class StoreScheduleException {
     @Column(nullable = false)
     private String reason;
 
+    @PrePersist
+    @PreUpdate
+    private void validate() {
+        if (!isClosed) {
+            if (openingTime == null || closingTime == null) {
+                throw new IllegalArgumentException("Si el local abre en fecha especial, debe definir hora de inicio y fin.");
+            }
+            if (closingTime.isBefore(openingTime)) {
+                throw new IllegalArgumentException("La hora de cierre no puede ser anterior a la de apertura.");
+            }
+        }
+    }
 
 }
