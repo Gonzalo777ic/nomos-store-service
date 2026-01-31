@@ -23,6 +23,28 @@ public class StoreStatusService {
 
 
 
+
+    /**
+     * Busca la próxima fecha/hora de apertura iterando los próximos 7 días.
+     */
+    private LocalDateTime findNextOpening(LocalDateTime fromDateTime) {
+        LocalDate dateIterator = fromDateTime.toLocalDate();
+
+        for (int i = 0; i < 8; i++) {
+            EffectiveSchedule schedule = getEffectiveSchedule(dateIterator);
+
+            if (!schedule.isClosed()) {
+                LocalDateTime potentialOpen = LocalDateTime.of(dateIterator, schedule.getOpeningTime());
+
+                if (potentialOpen.isAfter(fromDateTime)) {
+                    return potentialOpen;
+                }
+            }
+            dateIterator = dateIterator.plusDays(1);
+        }
+        return null;
+    }
+
     /**
      * Combina Tabla Base + Tabla Excepciones para obtener la "Verdad" de un día específico.
      * PRIORIDAD: Excepción > Horario Base
