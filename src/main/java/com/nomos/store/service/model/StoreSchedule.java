@@ -27,5 +27,8 @@ public class StoreSchedule {
     @Column(name = "day_of_week", nullable = false, unique = true)
     private DayOfWeek dayOfWeek;
 
+    @Column(name = "opening_time")
+    private LocalTime openingTime;
+
 
 }
