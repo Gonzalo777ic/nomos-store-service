@@ -1,0 +1,4 @@
+package com.nomos.store.service.repository;
+
+public class StoreScheduleRepository {
+}
