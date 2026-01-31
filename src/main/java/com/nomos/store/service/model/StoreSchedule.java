@@ -33,5 +33,8 @@ public class StoreSchedule {
     @Column(name = "closing_time")
     private LocalTime closingTime;
 
+    @Column(name = "is_open", nullable = false)
+    private boolean isOpen;
+
 
 }
