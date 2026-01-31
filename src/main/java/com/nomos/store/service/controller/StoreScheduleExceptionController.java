@@ -20,5 +20,10 @@ public class StoreScheduleExceptionController {
         return ResponseEntity.ok(service.getUpcomingExceptions());
     }
 
+    @PostMapping
+    public ResponseEntity<StoreScheduleException> create(@RequestBody StoreScheduleException exception) {
+        return ResponseEntity.ok(service.create(exception));
+    }
+
 
 }
