@@ -44,5 +44,23 @@ public class StoreScheduleService {
         return repository.save(schedule);
     }
 
-
+    /**
+     * Método auxiliar para inicializar la BD si está vacía.
+     * Se ejecuta automáticamente al arrancar la aplicación.
+     */
+    @PostConstruct
+    public void initializeDefaultSchedule() {
+        if (repository.count() == 0) {
+            Arrays.stream(DayOfWeek.values()).forEach(day -> {
+                StoreSchedule schedule = StoreSchedule.builder()
+                        .dayOfWeek(day)
+                        .openingTime(LocalTime.of(9, 0)) // 09:00 AM
+                        .closingTime(LocalTime.of(18, 0)) // 06:00 PM
+                        .isOpen(day != DayOfWeek.SUNDAY) // Domingo cerrado por defecto
+                        .build();
+                repository.save(schedule);
+            });
+            System.out.println("✅ Horario semanal por defecto inicializado (Lunes-Sábado 9-18h)");
+        }
+    }
 }
