@@ -36,5 +36,13 @@ public class StoreSchedule {
     @Column(name = "is_open", nullable = false)
     private boolean isOpen;
 
-
+    @PrePersist
+    @PreUpdate
+    private void validateHours() {
+        if (isOpen && openingTime != null && closingTime != null) {
+            if (closingTime.isBefore(openingTime)) {
+                throw new IllegalArgumentException("La hora de cierre no puede ser anterior a la hora de apertura.");
+            }
+        }
+    }
 }
