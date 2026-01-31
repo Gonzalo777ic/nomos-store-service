@@ -25,5 +25,12 @@ public class StoreScheduleExceptionController {
         return ResponseEntity.ok(service.create(exception));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<StoreScheduleException> update(
+            @PathVariable Long id,
+            @RequestBody StoreScheduleException exception) {
+        return ResponseEntity.ok(service.update(id, exception));
+    }
+
 
 }
