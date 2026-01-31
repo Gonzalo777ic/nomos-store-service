@@ -23,6 +23,14 @@ public class StoreStatusService {
 
 
 
+    @lombok.Value
+    private static class EffectiveSchedule {
+        boolean isClosed;
+        LocalTime openingTime;
+        LocalTime closingTime;
+        String reason;
+    }
+
     private String formatTime(LocalTime time) {
         return time.format(DateTimeFormatter.ofPattern("h:mm a"));
     }
