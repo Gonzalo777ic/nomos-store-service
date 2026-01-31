@@ -29,5 +29,20 @@ public class StoreScheduleService {
         return schedules;
     }
 
+    /**
+     * Actualiza el horario de un día específico.
+     */
+    @Transactional
+    public StoreSchedule updateSchedule(Long id, StoreSchedule newData) {
+        StoreSchedule schedule = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Horario no encontrado con ID: " + id));
+
+        schedule.setOpen(newData.isOpen());
+        schedule.setOpeningTime(newData.getOpeningTime());
+        schedule.setClosingTime(newData.getClosingTime());
+
+        return repository.save(schedule);
+    }
+
 
 }
