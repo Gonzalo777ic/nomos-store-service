@@ -38,6 +38,22 @@ public class StoreScheduleExceptionService {
 
         return repository.save(exception);
     }
+    /**
+     * Actualizar una excepción existente.
+     */
+    @Transactional
+    public StoreScheduleException update(Long id, StoreScheduleException newData) {
+        StoreScheduleException existing = repository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Excepción no encontrada con ID: " + id));
+
+        existing.setClosed(newData.isClosed());
+        existing.setOpeningTime(newData.getOpeningTime());
+        existing.setClosingTime(newData.getClosingTime());
+        existing.setReason(newData.getReason());
+
+        return repository.save(existing);
+    }
+
 
 
 
