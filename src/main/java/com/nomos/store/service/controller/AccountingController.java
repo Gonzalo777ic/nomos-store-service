@@ -21,7 +21,7 @@ public class AccountingController {
      * Lista el historial de todos los movimientos contables (El Libro Diario).
      */
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ACCOUNTANT')") // Ajusta los roles según tu sistema
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ACCOUNTANT')")
     public ResponseEntity<List<AccountingJournalEntry>> getAllEntries() {
         return ResponseEntity.ok(accountingService.getAllEntries());
     }

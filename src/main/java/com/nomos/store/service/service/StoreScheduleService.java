@@ -19,19 +19,12 @@ public class StoreScheduleService {
 
     private final StoreScheduleRepository repository;
 
-    /**
-     * Obtiene el horario semanal completo ordenado (Lunes a Domingo).
-     */
     public List<StoreSchedule> getAllSchedules() {
         List<StoreSchedule> schedules = repository.findAll();
-        // Ordenamos en memoria para asegurar Lunes primero
         schedules.sort(Comparator.comparing(StoreSchedule::getDayOfWeek));
         return schedules;
     }
 
-    /**
-     * Actualiza el horario de un día específico.
-     */
     @Transactional
     public StoreSchedule updateSchedule(Long id, StoreSchedule newData) {
         StoreSchedule schedule = repository.findById(id)
@@ -41,26 +34,21 @@ public class StoreScheduleService {
         schedule.setOpeningTime(newData.getOpeningTime());
         schedule.setClosingTime(newData.getClosingTime());
 
-        return repository.save(schedule);
+        return repository.saveAndFlush(schedule);
     }
 
-    /**
-     * Método auxiliar para inicializar la BD si está vacía.
-     * Se ejecuta automáticamente al arrancar la aplicación.
-     */
     @PostConstruct
     public void initializeDefaultSchedule() {
         if (repository.count() == 0) {
             Arrays.stream(DayOfWeek.values()).forEach(day -> {
                 StoreSchedule schedule = StoreSchedule.builder()
                         .dayOfWeek(day)
-                        .openingTime(LocalTime.of(9, 0)) // 09:00 AM
-                        .closingTime(LocalTime.of(18, 0)) // 06:00 PM
-                        .isOpen(day != DayOfWeek.SUNDAY) // Domingo cerrado por defecto
+                        .openingTime(LocalTime.of(9, 0))
+                        .closingTime(LocalTime.of(18, 0))
+                        .isOpen(day != DayOfWeek.SUNDAY)
                         .build();
                 repository.save(schedule);
             });
-            System.out.println("✅ Horario semanal por defecto inicializado (Lunes-Sábado 9-18h)");
         }
     }
 }

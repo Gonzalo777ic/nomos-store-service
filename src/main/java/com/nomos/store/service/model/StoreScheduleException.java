@@ -11,7 +11,7 @@ import java.time.LocalTime;
 
 @Entity
 @Table(name = "store_schedule_exceptions", uniqueConstraints = {
-        @UniqueConstraint(columnNames = "exception_date") // Solo una excepción por fecha
+        @UniqueConstraint(columnNames = "exception_date")
 })
 @Data
 @Builder

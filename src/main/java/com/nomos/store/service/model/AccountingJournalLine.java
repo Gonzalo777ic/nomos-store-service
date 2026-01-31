@@ -18,7 +18,7 @@ public class AccountingJournalLine {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "journal_entry_id", nullable = false)
-    @JsonIgnore // Romper ciclo JSON
+    @JsonIgnore
     @ToString.Exclude
     private AccountingJournalEntry journalEntry;
 

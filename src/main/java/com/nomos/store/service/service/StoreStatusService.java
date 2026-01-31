@@ -121,7 +121,7 @@ public class StoreStatusService {
                     ex.isClosed(),
                     ex.getOpeningTime(),
                     ex.getClosingTime(),
-                    ex.getReason() // "Feriado", etc.
+                    ex.getReason()
             );
         }
 
@@ -129,7 +129,7 @@ public class StoreStatusService {
         if (base.isPresent()) {
             StoreSchedule sch = base.get();
             return new EffectiveSchedule(
-                    !sch.isOpen(), // Si isOpen es false, isClosed es true
+                    !sch.isOpen(),
                     sch.getOpeningTime(),
                     sch.getClosingTime(),
                     null

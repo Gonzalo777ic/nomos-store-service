@@ -25,6 +25,11 @@ public class StoreScheduleController {
     public ResponseEntity<StoreSchedule> updateDaySchedule(
             @PathVariable Long id,
             @RequestBody StoreSchedule schedule) {
+
+        System.out.println("RECIBIENDO UPDATE PARA ID: " + id);
+        System.out.println("Hora Apertura llega como: " + schedule.getOpeningTime());
+        System.out.println("Hora Cierre llega como: " + schedule.getClosingTime());
+
         return ResponseEntity.ok(service.updateSchedule(id, schedule));
     }
 }

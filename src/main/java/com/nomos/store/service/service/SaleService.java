@@ -26,7 +26,7 @@ public class SaleService {
 
     private final SaleRepository saleRepository;
     private final SaleDetailRepository saleDetailRepository;
-    private final AccountingService accountingService; // Inyección del Servicio Contable
+    private final AccountingService accountingService;
 
     public List<Sale> findAll() {
         return saleRepository.findAll();
@@ -233,7 +233,7 @@ public class SaleService {
                     .credit(0.0)
                     .build());
 
-            double baseImponible = sale.getTotalAmount() / 1.18; // Asumiendo IGV 18%
+            double baseImponible = sale.getTotalAmount() / 1.18;
             double igv = sale.getTotalAmount() - baseImponible;
 
             lines.add(AccountingJournalLine.builder()

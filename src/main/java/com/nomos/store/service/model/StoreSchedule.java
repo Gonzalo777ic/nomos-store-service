@@ -1,6 +1,7 @@
 package com.nomos.store.service.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,6 +37,7 @@ public class StoreSchedule {
     @Column(name = "closing_time")
     private LocalTime closingTime;
 
+    @JsonProperty("isOpen")
     @Column(name = "is_open", nullable = false)
     private boolean isOpen;
 
