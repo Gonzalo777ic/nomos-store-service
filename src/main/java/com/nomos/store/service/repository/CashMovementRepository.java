@@ -21,4 +21,5 @@ public interface CashMovementRepository extends JpaRepository<CashMovement, Long
             @Param("end") LocalDateTime end
     );
 
+    boolean existsByExternalReference(String externalReference);
 }
