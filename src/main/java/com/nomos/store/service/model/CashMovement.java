@@ -38,5 +38,12 @@ public class CashMovement {
     @JoinColumn(name = "collection_id")
     private Collection collection;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sale_id")
+    private Sale sale;
+
+    @Column(name = "external_reference")
+    private String externalReference;
+
 
 }
