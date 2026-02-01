@@ -71,6 +71,27 @@ public class CashMovementService {
 
 
 
+    /**
+     * Obtener movimientos filtrados por rango de fechas.
+     * Si las fechas son nulas, devuelve los del día actual.
+     */
+    public List<CashMovement> getMovementsByFilter(LocalDate startDate, LocalDate endDate) {
+        LocalDateTime start;
+        LocalDateTime end;
+
+        if (startDate == null || endDate == null) {
+            // Por defecto: HOY
+            start = LocalDate.now().atStartOfDay();
+            end = LocalDate.now().atTime(LocalTime.MAX);
+        } else {
+            start = startDate.atStartOfDay();
+            end = endDate.atTime(LocalTime.MAX);
+        }
+
+        // Usamos el método que ya tenías en el repositorio
+        return repository.findByMovementDateBetween(start, end);
+    }
+
     // DTO Interno para el payload manual
     @Data
     public static class ManualMovementPayload {
