@@ -44,5 +44,12 @@ public class CashMovementController {
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
-
+    /**
+     * GET /api/store/cash-movements/daily
+     * Alias rápido para ver el día actual.
+     */
+    @GetMapping("/daily")
+    public ResponseEntity<List<CashMovement>> getDaily() {
+        return ResponseEntity.ok(service.getDailyMovements());
+    }
 }
