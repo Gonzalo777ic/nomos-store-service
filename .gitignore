@@ -34,3 +34,8 @@ build/
 
 ### Secretos ###
 src/main/resources/application.properties
+
+
+### Script
+models_summary.txt
+extract_models.sh
