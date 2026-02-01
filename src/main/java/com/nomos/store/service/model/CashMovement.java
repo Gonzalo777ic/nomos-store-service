@@ -23,5 +23,12 @@ public class CashMovement {
     @Column(nullable = false)
     private LocalDateTime movementDate;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private CashMovementType type;
+
+    @Column(nullable = false)
+    private Double amount;
+
 
 }
