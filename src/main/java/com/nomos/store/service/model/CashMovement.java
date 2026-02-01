@@ -45,5 +45,14 @@ public class CashMovement {
     @Column(name = "external_reference")
     private String externalReference;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private CashMovementStatus status;
+
+    private String concept;
+
+    private Long createdByUserId;
+    private LocalDateTime createdAt;
+
 
 }
