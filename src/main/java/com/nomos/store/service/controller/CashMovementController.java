@@ -44,12 +44,12 @@ public class CashMovementController {
      * Crea un movimiento manual (Gasto o Ingreso Extra).
      */
     @PostMapping
-    public ResponseEntity<CashMovement> create(@RequestBody ManualMovementPayload payload) {
-        // Asumimos userId = 1L temporalmente (idealmente lo sacas del token JWT)
+    public ResponseEntity<CashMovementDTO> create(@RequestBody ManualMovementPayload payload) {
         Long userId = 1L;
 
         CashMovement created = service.createManualMovement(payload, userId);
-        return new ResponseEntity<>(created, HttpStatus.CREATED);
+
+        return new ResponseEntity<>(CashMovementDTO.fromEntity(created), HttpStatus.CREATED);
     }
 
     /**
