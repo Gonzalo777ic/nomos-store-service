@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/store/cash-movements")
@@ -25,11 +26,17 @@ public class CashMovementController {
      * Soporta filtros opcionales: ?startDate=2026-02-01&endDate=2026-02-01
      */
     @GetMapping
-    public ResponseEntity<List<CashMovement>> getAll(
+    public ResponseEntity<List<CashMovementDTO>> getAll(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
-        return ResponseEntity.ok(service.getMovementsByFilter(startDate, endDate));
+        List<CashMovement> movements = service.getMovementsByFilter(startDate, endDate);
+
+        List<CashMovementDTO> dtos = movements.stream()
+                .map(CashMovementDTO::fromEntity)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
     }
 
     /**
