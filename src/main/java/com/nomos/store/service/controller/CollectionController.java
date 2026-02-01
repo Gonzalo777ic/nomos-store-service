@@ -110,5 +110,30 @@ public class CollectionController {
     }
 
 
+    @PostMapping("/{id}/confirm")
+    @Transactional
+    public ResponseEntity<?> confirmCollection(@PathVariable Long id) {
 
+        Collection collection = collectionRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cobro no encontrado"));
+
+        if (collection.getStatus() == CollectionStatus.CONFIRMED) {
+            return ResponseEntity.badRequest().body("La cobranza ya fue confirmada previamente.");
+        }
+
+        if (collection.getStatus() == CollectionStatus.CANCELLED) {
+            return ResponseEntity.badRequest().body("No se puede confirmar una cobranza anulada.");
+        }
+
+        collection.setStatus(CollectionStatus.CONFIRMED);
+
+        collection.getAccountsReceivable().applyPayment(collection, null);
+
+        cashMovementService.registerIncomeFromCollection(collection, 1L); // 1L es el userId temporal
+        // }
+
+        collectionRepository.save(collection);
+
+        return ResponseEntity.ok(collection);
+    }
 }
