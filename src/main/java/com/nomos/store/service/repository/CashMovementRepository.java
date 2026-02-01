@@ -1,4 +1,18 @@
 package com.nomos.store.service.repository;
 
-public class CashMovementRepository {
+import com.nomos.store.service.model.CashMovement;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Repository
+public interface CashMovementRepository extends JpaRepository<CashMovement, Long> {
+
+    List<CashMovement> findByMovementDateBetween(LocalDateTime start, LocalDateTime end);
+
+
 }
