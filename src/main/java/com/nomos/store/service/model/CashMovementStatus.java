@@ -1,4 +1,7 @@
 package com.nomos.store.service.model;
 
-public class CashMovementStatus {
+public enum CashMovementStatus {
+    PROCESSED,
+    PENDING,
+    ANNULLED
 }
