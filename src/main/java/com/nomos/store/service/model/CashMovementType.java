@@ -1,4 +1,6 @@
 package com.nomos.store.service.model;
 
-public class CashMovementType {
+public enum CashMovementType {
+    INCOME,
+    EXPENSE
 }
