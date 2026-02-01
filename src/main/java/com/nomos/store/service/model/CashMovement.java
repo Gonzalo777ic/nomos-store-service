@@ -54,5 +54,14 @@ public class CashMovement {
     private Long createdByUserId;
     private LocalDateTime createdAt;
 
-
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        if (this.movementDate == null) {
+            this.movementDate = LocalDateTime.now();
+        }
+        if (this.status == null) {
+            this.status = CashMovementStatus.PROCESSED;
+        }
+    }
 }
