@@ -3,11 +3,14 @@ package com.nomos.store.service.service;
 import com.nomos.store.service.model.*;
 import com.nomos.store.service.repository.CashMovementRepository;
 import com.nomos.store.service.repository.PaymentMethodConfigRepository;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -64,6 +67,18 @@ public class CashMovementService {
         LocalDateTime startOfDay = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0);
         LocalDateTime endOfDay = LocalDateTime.now().withHour(23).withMinute(59).withSecond(59);
         return repository.findByMovementDateBetween(startOfDay, endOfDay);
+    }
+
+
+
+    // DTO Interno para el payload manual
+    @Data
+    public static class ManualMovementPayload {
+        private CashMovementType type;
+        private Double amount;
+        private Long paymentMethodId;
+        private String concept;
+        private String externalReference;
     }
 
 
