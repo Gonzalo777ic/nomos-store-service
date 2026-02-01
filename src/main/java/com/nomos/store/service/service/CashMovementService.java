@@ -40,5 +40,25 @@ public class CashMovementService {
         return repository.save(movement);
     }
 
+    /**
+     * Registra un egreso (ej: Devolución de dinero por nota de crédito)
+     */
+    @Transactional
+    public CashMovement registerExpense(Double amount, PaymentMethodConfig method, String reason, Long userId) {
+        CashMovement movement = CashMovement.builder()
+                .type(CashMovementType.EXPENSE)
+                .amount(amount)
+                .movementDate(LocalDateTime.now())
+                .paymentMethod(method)
+                .concept(reason)
+                .status(CashMovementStatus.PROCESSED)
+                .createdByUserId(userId)
+                .build();
+
+        return repository.save(movement);
+    }
+
+
+
 
 }
