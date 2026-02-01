@@ -1,6 +1,7 @@
 package com.nomos.store.service.controller;
 
 import com.nomos.store.service.model.CashMovement;
+import com.nomos.store.service.model.dto.CashMovementDTO;
 import com.nomos.store.service.service.CashMovementService;
 import com.nomos.store.service.service.CashMovementService.ManualMovementPayload;
 import lombok.RequiredArgsConstructor;
