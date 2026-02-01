@@ -31,5 +31,18 @@ public class CashMovementController {
         return ResponseEntity.ok(service.getMovementsByFilter(startDate, endDate));
     }
 
+    /**
+     * POST /api/store/cash-movements
+     * Crea un movimiento manual (Gasto o Ingreso Extra).
+     */
+    @PostMapping
+    public ResponseEntity<CashMovement> create(@RequestBody ManualMovementPayload payload) {
+        // Asumimos userId = 1L temporalmente (idealmente lo sacas del token JWT)
+        Long userId = 1L;
+
+        CashMovement created = service.createManualMovement(payload, userId);
+        return new ResponseEntity<>(created, HttpStatus.CREATED);
+    }
+
 
 }
