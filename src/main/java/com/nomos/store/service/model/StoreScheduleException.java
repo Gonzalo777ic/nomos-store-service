@@ -1,5 +1,7 @@
 package com.nomos.store.service.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,6 +28,7 @@ public class StoreScheduleException {
     @Column(name = "exception_date", nullable = false, unique = true)
     private LocalDate date;
 
+    @JsonProperty("isClosed")
     @Column(name = "is_closed", nullable = false)
     private boolean isClosed;
 
