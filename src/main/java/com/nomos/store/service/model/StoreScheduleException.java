@@ -32,9 +32,11 @@ public class StoreScheduleException {
     @Column(name = "is_closed", nullable = false)
     private boolean isClosed;
 
+    @JsonFormat(pattern = "HH:mm")
     @Column(name = "opening_time")
     private LocalTime openingTime;
 
+    @JsonFormat(pattern = "HH:mm")
     @Column(name = "closing_time")
     private LocalTime closingTime;
 
