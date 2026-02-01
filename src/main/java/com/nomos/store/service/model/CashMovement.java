@@ -30,5 +30,13 @@ public class CashMovement {
     @Column(nullable = false)
     private Double amount;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payment_method_id", nullable = false)
+    private PaymentMethodConfig paymentMethod;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "collection_id")
+    private Collection collection;
+
 
 }
