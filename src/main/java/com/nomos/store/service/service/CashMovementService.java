@@ -2,6 +2,7 @@ package com.nomos.store.service.service;
 
 import com.nomos.store.service.model.*;
 import com.nomos.store.service.repository.CashMovementRepository;
+import com.nomos.store.service.repository.PaymentMethodConfigRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +15,7 @@ import java.util.List;
 public class CashMovementService {
 
     private final CashMovementRepository repository;
+    private final PaymentMethodConfigRepository paymentMethodRepository;
 
     /**
      * Registra un ingreso de dinero derivado de una cobranza (Collection).
