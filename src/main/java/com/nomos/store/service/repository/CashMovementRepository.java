@@ -14,5 +14,11 @@ public interface CashMovementRepository extends JpaRepository<CashMovement, Long
 
     List<CashMovement> findByMovementDateBetween(LocalDateTime start, LocalDateTime end);
 
+    @Query("SELECT cm FROM CashMovement cm WHERE cm.paymentMethod.id = :methodId AND cm.movementDate BETWEEN :start AND :end")
+    List<CashMovement> findByPaymentMethodAndDateRange(
+            @Param("methodId") Long methodId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
 
 }
