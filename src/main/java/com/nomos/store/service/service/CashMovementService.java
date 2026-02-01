@@ -58,7 +58,11 @@ public class CashMovementService {
         return repository.save(movement);
     }
 
-
+    public List<CashMovement> getDailyMovements() {
+        LocalDateTime startOfDay = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0);
+        LocalDateTime endOfDay = LocalDateTime.now().withHour(23).withMinute(59).withSecond(59);
+        return repository.findByMovementDateBetween(startOfDay, endOfDay);
+    }
 
 
 }
