@@ -69,7 +69,29 @@ public class CashMovementService {
         return repository.findByMovementDateBetween(startOfDay, endOfDay);
     }
 
+    /**
+     * Método para registrar un movimiento manual desde el Dashboard.
+     * Soporta tanto Ingresos como Egresos.
+     */
+    @Transactional
+    public CashMovement createManualMovement(ManualMovementPayload payload, Long userId) {
 
+        PaymentMethodConfig pm = paymentMethodRepository.findById(payload.getPaymentMethodId())
+                .orElseThrow(() -> new IllegalArgumentException("Método de pago no encontrado"));
+
+        CashMovement movement = CashMovement.builder()
+                .type(payload.getType())
+                .amount(payload.getAmount())
+                .movementDate(LocalDateTime.now()) // O usar payload.getDate() si quieres permitir fechas pasadas
+                .paymentMethod(pm)
+                .concept(payload.getConcept())
+                .externalReference(payload.getExternalReference())
+                .status(CashMovementStatus.PROCESSED) // Movimientos manuales nacen confirmados
+                .createdByUserId(userId)
+                .build();
+
+        return repository.save(movement);
+    }
 
     /**
      * Obtener movimientos filtrados por rango de fechas.
