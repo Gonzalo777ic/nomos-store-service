@@ -39,6 +39,7 @@ public class AnnouncementService {
         return repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Anuncio no encontrado con ID: " + id));
     }
+
     /**
      * Crea un nuevo anuncio validando la coherencia de las fechas.
      */
@@ -68,6 +69,7 @@ public class AnnouncementService {
 
         return repository.save(existing);
     }
+
     /**
      * Cambia el estado de activo/inactivo de un anuncio.
      * Útil para ocultar rápidamente un anuncio sin borrarlo.

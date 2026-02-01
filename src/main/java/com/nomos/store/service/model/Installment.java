@@ -94,28 +94,43 @@ public class Installment {
      * Lógica de imputación de pagos: Primero Mora, Luego Capital.
      */
     public Double applyPaymentLogic(Double availableAmount) {
-        if (availableAmount <= 0) return 0.0;
+        System.out.println("\n>>> DEBUG: Iniciando pago en Cuota #" + this.number + " (ID: " + this.id + ")");
+        System.out.println("    Estado actual: " + this.status);
+        System.out.println("    Capital Pagado antes: " + this.paidAmount + " / Esperado: " + this.expectedAmount);
+        System.out.println("    Dinero disponible para aplicar: " + availableAmount);
 
+        if (availableAmount <= 0) return 0.0;
         double penaltyDue = getPendingPenalty();
         if (penaltyDue > 0) {
             double paymentToPenalty = Math.min(availableAmount, penaltyDue);
             this.paidPenalty += paymentToPenalty;
             availableAmount -= paymentToPenalty;
+
+            System.out.println("    -> Se pagó mora: " + paymentToPenalty + ". Restan: " + availableAmount);
         }
 
         if (availableAmount <= 0.001) {
             updateStatus();
             return 0.0;
         }
-
         double capitalDue = this.expectedAmount - this.paidAmount;
+        System.out.println("    -> Deuda Capital calculada: " + capitalDue);
+
         if (capitalDue > 0) {
             double paymentToCapital = Math.min(availableAmount, capitalDue);
             this.paidAmount += paymentToCapital;
             availableAmount -= paymentToCapital;
+            System.out.println("    -> $$$ PAGO APLICADO A CAPITAL: " + paymentToCapital);
+            System.out.println("    -> NUEVO Capital Pagado en memoria: " + this.paidAmount);
+        } else {
+            System.out.println("    -> La cuota ya estaba cubierta en capital.");
         }
 
         updateStatus();
+
+        System.out.println("    -> Estado final cuota: " + this.status);
+        System.out.println("    -> Dinero sobrante para siguiente cuota: " + availableAmount);
+
         return availableAmount;
     }
 

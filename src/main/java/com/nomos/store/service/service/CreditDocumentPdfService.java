@@ -30,7 +30,6 @@ public class CreditDocumentPdfService {
                 .orElseThrow(() -> new RuntimeException("Documento no encontrado con ID: " + id));
 
 
-
         if (doc.getStatus() != CreditDocumentStatus.SIGNED) {
             throw new IllegalStateException(
                     String.format("ACCESO DENEGADO: El documento %s se encuentra en estado %s. " +
@@ -227,7 +226,7 @@ public class CreditDocumentPdfService {
 
         PdfPCell avalCell = new PdfPCell();
         avalCell.addElement(new Paragraph("AVAL / GARANTE:"));
-        if(avalNombre != null && !avalNombre.isEmpty()) {
+        if (avalNombre != null && !avalNombre.isEmpty()) {
             avalCell.addElement(new Paragraph(avalNombre));
             avalCell.addElement(new Paragraph(detectDocLabel(avalId) + ": " + avalId));
             avalCell.addElement(new Paragraph("Firma: ___________"));

@@ -136,20 +136,19 @@ public class SaleService {
 
         if (sale.getAccountsReceivable() != null) {
             sale.getAccountsReceivable().setStatus(AccountsReceivableStatus.CANCELLED);
+
             sale.getAccountsReceivable().getCollections().forEach(collection -> {
-                if (!"ANULADO".equals(collection.getStatus())) {
-                    collection.setStatus("ANULADO");
+
+                if (collection.getStatus() != CollectionStatus.CANCELLED) {
+                    collection.setStatus(CollectionStatus.CANCELLED);
+
                 }
             });
         }
 
-
-
         saleRepository.save(sale);
         log.info("Venta ID {} anulada.", id);
     }
-
-
 
 
     /**
@@ -218,40 +217,40 @@ public class SaleService {
      * Genera el asiento contable de venta.
      */
     private void generateAccountingEntry(Sale sale) {
-            AccountingJournalEntry entry = new AccountingJournalEntry();
-            entry.setEntryDate(LocalDateTime.now());
-            entry.setConcept("Venta " + sale.getType() + " #" + sale.getId());
-            entry.setReferenceDocument("SALE-" + sale.getId());
-            entry.setStatus("POSTED");
+        AccountingJournalEntry entry = new AccountingJournalEntry();
+        entry.setEntryDate(LocalDateTime.now());
+        entry.setConcept("Venta " + sale.getType() + " #" + sale.getId());
+        entry.setReferenceDocument("SALE-" + sale.getId());
+        entry.setStatus("POSTED");
 
-            List<AccountingJournalLine> lines = new ArrayList<>();
+        List<AccountingJournalLine> lines = new ArrayList<>();
 
-            lines.add(AccountingJournalLine.builder()
-                    .accountCode("12.1")
-                    .accountName("Facturas por Cobrar")
-                    .debit(sale.getTotalAmount())
-                    .credit(0.0)
-                    .build());
+        lines.add(AccountingJournalLine.builder()
+                .accountCode("12.1")
+                .accountName("Facturas por Cobrar")
+                .debit(sale.getTotalAmount())
+                .credit(0.0)
+                .build());
 
-            double baseImponible = sale.getTotalAmount() / 1.18;
-            double igv = sale.getTotalAmount() - baseImponible;
+        double baseImponible = sale.getTotalAmount() / 1.18;
+        double igv = sale.getTotalAmount() - baseImponible;
 
-            lines.add(AccountingJournalLine.builder()
-                    .accountCode("40.1")
-                    .accountName("Tributos por Pagar (IGV)")
-                    .debit(0.0)
-                    .credit(Math.round(igv * 100.0) / 100.0)
-                    .build());
+        lines.add(AccountingJournalLine.builder()
+                .accountCode("40.1")
+                .accountName("Tributos por Pagar (IGV)")
+                .debit(0.0)
+                .credit(Math.round(igv * 100.0) / 100.0)
+                .build());
 
-            lines.add(AccountingJournalLine.builder()
-                    .accountCode("70.1")
-                    .accountName("Venta de Mercaderías")
-                    .debit(0.0)
-                    .credit(Math.round(baseImponible * 100.0) / 100.0)
-                    .build());
+        lines.add(AccountingJournalLine.builder()
+                .accountCode("70.1")
+                .accountName("Venta de Mercaderías")
+                .debit(0.0)
+                .credit(Math.round(baseImponible * 100.0) / 100.0)
+                .build());
 
-            entry.setLines(lines);
+        entry.setLines(lines);
 
-            accountingService.createEntry(entry);
+        accountingService.createEntry(entry);
     }
 }

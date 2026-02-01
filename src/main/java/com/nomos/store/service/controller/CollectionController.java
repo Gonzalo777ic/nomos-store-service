@@ -1,6 +1,7 @@
 package com.nomos.store.service.controller;
 
 import com.nomos.store.service.model.*;
+import com.nomos.store.service.repository.AccountsReceivableRepository;
 import com.nomos.store.service.repository.CollectionRepository;
 import com.nomos.store.service.repository.PaymentMethodConfigRepository;
 import com.nomos.store.service.repository.SaleRepository;
@@ -26,7 +27,8 @@ public class CollectionController {
     private SaleRepository saleRepository;
     @Autowired
     private PaymentMethodConfigRepository paymentMethodRepository;
-
+    @Autowired
+    private AccountsReceivableRepository accountsReceivableRepository;
     @Autowired
     private CashMovementService cashMovementService;
 
@@ -37,55 +39,48 @@ public class CollectionController {
         private Long paymentMethodId;
         private String referenceNumber;
         private LocalDateTime collectionDate;
-
     }
 
+    /**
+     * Endpoint unificado: Crea el cobro Y aplica el pago inmediatamente.
+     */
     @PostMapping
     @Transactional
-    public ResponseEntity<?> createCollection(@RequestBody CollectionPayload payload) {
-
+    public ResponseEntity<?> createAndApplyCollection(@RequestBody CollectionPayload payload) {
         Sale sale = saleRepository.findById(payload.getSaleId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Venta no encontrada"));
 
         AccountsReceivable ar = sale.getAccountsReceivable();
         if (ar == null) {
-            return ResponseEntity.badRequest()
-                    .body("La venta no tiene cuenta por cobrar asociada.");
+            return ResponseEntity.badRequest().body("La venta no tiene cuenta por cobrar asociada.");
         }
 
         PaymentMethodConfig paymentMethod = paymentMethodRepository.findById(payload.getPaymentMethodId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Método de pago no encontrado"));
 
         if ("CANCELADA".equals(sale.getStatus())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "No se puede registrar cobros en una venta CANCELADA.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se puede registrar cobros en una venta CANCELADA.");
         }
 
         if (payload.getAmount() <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "El monto debe ser mayor a 0");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El monto debe ser mayor a 0");
         }
-
         Collection collection = Collection.builder()
                 .sale(sale)
                 .accountsReceivable(ar)
                 .amount(payload.getAmount())
                 .paymentMethod(paymentMethod)
                 .referenceNumber(payload.getReferenceNumber())
-                .collectionDate(
-                        payload.getCollectionDate() != null
-                                ? payload.getCollectionDate()
-                                : LocalDateTime.now()
-                )
-                .status(CollectionStatus.PENDING)
+                .collectionDate(payload.getCollectionDate() != null ? payload.getCollectionDate() : LocalDateTime.now())
+                .status(CollectionStatus.CONFIRMED)
                 .build();
+        collection = collectionRepository.saveAndFlush(collection);
+        ar.applyPayment(collection, null);
+        cashMovementService.registerIncomeFromCollection(collection, 1L);
+        accountsReceivableRepository.saveAndFlush(ar);
 
-        Collection saved = collectionRepository.save(collection);
-
-        return new ResponseEntity<>(saved, HttpStatus.CREATED);
+        return new ResponseEntity<>(collection, HttpStatus.CREATED);
     }
-
-
 
     @GetMapping
     public ResponseEntity<List<Collection>> getAllCollections() {
@@ -100,39 +95,26 @@ public class CollectionController {
     @DeleteMapping("/{id}")
     @Transactional
     public ResponseEntity<Void> deleteCollection(@PathVariable Long id) {
-
-
         if (!collectionRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Cobro no encontrado");
         }
         collectionRepository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
-
-
     @PostMapping("/{id}/confirm")
     @Transactional
     public ResponseEntity<?> confirmCollection(@PathVariable Long id) {
-
         Collection collection = collectionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cobro no encontrado"));
 
         if (collection.getStatus() == CollectionStatus.CONFIRMED) {
             return ResponseEntity.badRequest().body("La cobranza ya fue confirmada previamente.");
         }
-
-        if (collection.getStatus() == CollectionStatus.CANCELLED) {
-            return ResponseEntity.badRequest().body("No se puede confirmar una cobranza anulada.");
-        }
-
         collection.setStatus(CollectionStatus.CONFIRMED);
-
-        collection.getAccountsReceivable().applyPayment(collection, null);
-
-        cashMovementService.registerIncomeFromCollection(collection, 1L); // 1L es el userId temporal
-        // }
-
-        collectionRepository.save(collection);
+        AccountsReceivable ar = collection.getAccountsReceivable();
+        ar.applyPayment(collection, null);
+        cashMovementService.registerIncomeFromCollection(collection, 1L);
+        accountsReceivableRepository.saveAndFlush(ar);
 
         return ResponseEntity.ok(collection);
     }
