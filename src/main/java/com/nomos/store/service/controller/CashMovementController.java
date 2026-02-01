@@ -57,7 +57,11 @@ public class CashMovementController {
      * Alias rápido para ver el día actual.
      */
     @GetMapping("/daily")
-    public ResponseEntity<List<CashMovement>> getDaily() {
-        return ResponseEntity.ok(service.getDailyMovements());
+    public ResponseEntity<List<CashMovementDTO>> getDaily() {
+        List<CashMovement> movements = service.getDailyMovements();
+        List<CashMovementDTO> dtos = movements.stream()
+                .map(CashMovementDTO::fromEntity)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 }
