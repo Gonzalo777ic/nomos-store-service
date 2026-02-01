@@ -21,5 +21,18 @@ public class CashMovementDTO {
     private CashMovementStatus status;
     private Long saleId;
 
-
+    // Método estático para convertir de Entidad a DTO
+    public static CashMovementDTO fromEntity(CashMovement entity) {
+        return CashMovementDTO.builder()
+                .id(entity.getId())
+                .movementDate(entity.getMovementDate())
+                .type(entity.getType())
+                .amount(entity.getAmount())
+                .paymentMethodName(entity.getPaymentMethod() != null ? entity.getPaymentMethod().getName() : "Desconocido")
+                .concept(entity.getConcept())
+                .externalReference(entity.getExternalReference())
+                .status(entity.getStatus())
+                .saleId(entity.getSale() != null ? entity.getSale().getId() : null)
+                .build();
+    }
 }
