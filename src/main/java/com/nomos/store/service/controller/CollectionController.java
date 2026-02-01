@@ -1,12 +1,10 @@
 package com.nomos.store.service.controller;
 
-import com.nomos.store.service.model.AccountsReceivable;
-import com.nomos.store.service.model.Collection;
-import com.nomos.store.service.model.PaymentMethodConfig;
-import com.nomos.store.service.model.Sale;
+import com.nomos.store.service.model.*;
 import com.nomos.store.service.repository.CollectionRepository;
 import com.nomos.store.service.repository.PaymentMethodConfigRepository;
 import com.nomos.store.service.repository.SaleRepository;
+import com.nomos.store.service.service.CashMovementService;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -29,6 +27,9 @@ public class CollectionController {
     @Autowired
     private PaymentMethodConfigRepository paymentMethodRepository;
 
+    @Autowired
+    private CashMovementService cashMovementService;
+
     @Data
     public static class CollectionPayload {
         private Long saleId;
@@ -48,18 +49,21 @@ public class CollectionController {
 
         AccountsReceivable ar = sale.getAccountsReceivable();
         if (ar == null) {
-
-            return ResponseEntity.badRequest().body("Error de integridad: La venta no tiene cuenta por cobrar asociada.");
+            return ResponseEntity.badRequest()
+                    .body("La venta no tiene cuenta por cobrar asociada.");
         }
 
         PaymentMethodConfig paymentMethod = paymentMethodRepository.findById(payload.getPaymentMethodId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Método de pago no encontrado"));
 
         if ("CANCELADA".equals(sale.getStatus())) {
-            return ResponseEntity.badRequest().body("No se puede registrar cobros en una venta CANCELADA.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "No se puede registrar cobros en una venta CANCELADA.");
         }
+
         if (payload.getAmount() <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El monto debe ser mayor a 0");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "El monto debe ser mayor a 0");
         }
 
         Collection collection = Collection.builder()
@@ -68,17 +72,20 @@ public class CollectionController {
                 .amount(payload.getAmount())
                 .paymentMethod(paymentMethod)
                 .referenceNumber(payload.getReferenceNumber())
-                .collectionDate(payload.getCollectionDate() != null ? payload.getCollectionDate() : LocalDateTime.now())
-                .status("ACTIVO")
+                .collectionDate(
+                        payload.getCollectionDate() != null
+                                ? payload.getCollectionDate()
+                                : LocalDateTime.now()
+                )
+                .status(CollectionStatus.PENDING)
                 .build();
 
+        Collection saved = collectionRepository.save(collection);
 
-        ar.applyPayment(collection, null);
-
-        Collection savedCollection = collectionRepository.save(collection);
-
-        return new ResponseEntity<>(savedCollection, HttpStatus.CREATED);
+        return new ResponseEntity<>(saved, HttpStatus.CREATED);
     }
+
+
 
     @GetMapping
     public ResponseEntity<List<Collection>> getAllCollections() {
@@ -101,4 +108,7 @@ public class CollectionController {
         collectionRepository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
+
+
+
 }

@@ -1,6 +1,6 @@
 package com.nomos.store.service.model;
 
-public enum CollectionType {
+public enum CollectionStatus {
     PENDING,
     CONFIRMED,
     CANCELLED

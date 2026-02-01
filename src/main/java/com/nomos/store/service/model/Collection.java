@@ -53,8 +53,9 @@ public class Collection {
     @Column(name = "reference_number")
     private String referenceNumber;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private String status;
+    private CollectionStatus status;
 
     @PrePersist
     public void prePersist() {
