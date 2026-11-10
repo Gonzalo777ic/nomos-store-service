@@ -59,18 +59,39 @@ public class AccountsReceivable {
 
         if (collections == null) return 0.0;
         return collections.stream()
-                .filter(c -> !"ANULADO".equals(c.getStatus()))
-                .mapToDouble(Collection::getAmount)
+                .filter(c -> c.getStatus() == CollectionStatus.CONFIRMED)
+                .map(Collection::getAmount)
+                .mapToDouble(Double::doubleValue)
                 .sum();
     }
 
     public Double getBalance() {
+        return getTotalAmount() - getPaidAmount();
+    }
 
-
-
-
-        double paidCapital = installments.stream().mapToDouble(Installment::getPaidAmount).sum();
-        return totalAmount - paidCapital;
+    public void applyCredit(double amount) {
+        if (this.status == AccountsReceivableStatus.CANCELLED) {
+            throw new IllegalStateException("No se puede acreditar una cuenta cancelada");
+        }
+        if (amount <= 0) {
+            return;
+        }
+        this.totalAmount = Math.max(0, this.totalAmount - amount);
+        double remaining = amount;
+        List<Installment> pending = this.installments.stream()
+                .filter(installment -> installment.getStatus() != InstallmentStatus.PAID)
+                .sorted(Comparator.comparing(Installment::getDueDate).reversed())
+                .toList();
+        for (Installment installment : pending) {
+            if (remaining <= 0) {
+                break;
+            }
+            double expected = installment.getExpectedAmount();
+            double reduced = Math.min(expected, remaining);
+            installment.setExpectedAmount(Math.max(0, expected - reduced));
+            remaining -= reduced;
+        }
+        updateStatus();
     }
 
     public void applyPayment(Collection collection, Installment specificInstallment) {

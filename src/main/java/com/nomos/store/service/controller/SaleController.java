@@ -79,9 +79,25 @@ public class SaleController {
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
     public ResponseEntity<?> createSale(@RequestBody SaleCreationRequest request) {
         try {
-            Sale createdSale = saleService.createSale(request);
+            Sale createdSale = saleService.createSale(new com.valeerp.sales.RegisterSale(
+                    request.getClientId(),
+                    request.getSaleDate(),
+                    request.getCreditStartDate(),
+                    request.getType(),
+                    request.getPaymentCondition(),
+                    request.getCreditDays(),
+                    request.getSellerId(),
+                    request.getNumberOfInstallments(),
+                    request.getDetails().stream()
+                            .map(detail -> new com.valeerp.sales.RegisterSale.Line(
+                                    detail.getProductId(),
+                                    detail.getQuantity(),
+                                    detail.getTaxRateId(),
+                                    detail.getPromotionId()))
+                            .toList()
+            ));
             return ResponseEntity.status(HttpStatus.CREATED).body(createdSale);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | com.valeerp.kernel.DomainException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

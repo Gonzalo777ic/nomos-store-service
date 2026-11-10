@@ -39,13 +39,14 @@ public class Sale {
     private PaymentConditionEnum paymentCondition;
 
     @Column(name = "status", nullable = false, length = 50)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private SaleStatus status;
 
     @Column(name = "total_amount", nullable = false)
-    private Double totalAmount;
+    private java.math.BigDecimal totalAmount;
 
     @Column(name = "total_discount", nullable = false)
-    private Double totalDiscount;
+    private java.math.BigDecimal totalDiscount;
 
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnoreProperties("sale")
@@ -86,7 +87,10 @@ public class Sale {
     }
 
     public Double getBalance() {
-        return accountsReceivable != null ? accountsReceivable.getBalance() : (totalAmount != null ? totalAmount : 0.0);
+        if (accountsReceivable != null) {
+            return accountsReceivable.getBalance();
+        }
+        return totalAmount != null ? totalAmount.doubleValue() : 0.0;
     }
 
     public String getPaymentStatus() {

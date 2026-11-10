@@ -2,6 +2,8 @@ package com.nomos.store.service.service;
 
 import com.nomos.store.service.model.*;
 import com.nomos.store.service.repository.*;
+import com.valeerp.kernel.DomainException;
+import com.valeerp.sales.StockClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +25,8 @@ public class SaleReturnService {
     private SaleDetailRepository saleDetailRepository;
     @Autowired
     private SalesDocumentService salesDocumentService;
+    @Autowired
+    private StockClient stockClient;
 
     /**
      * CREAR BORRADOR
@@ -61,14 +65,14 @@ public class SaleReturnService {
                 throw new RuntimeException("No puedes devolver más cantidad de la vendida para el producto: " + originalDetail.getProductId());
             }
 
-            double rowTotal = originalDetail.getUnitPrice() * quantityToReturn;
+            double rowTotal = originalDetail.getUnitPrice().doubleValue() * quantityToReturn;
             totalAmount += rowTotal;
 
             SaleReturnDetail returnDetail = SaleReturnDetail.builder()
                     .saleReturn(saleReturn)
                     .originalSaleDetail(originalDetail)
                     .quantity(quantityToReturn)
-                    .unitPrice(originalDetail.getUnitPrice())
+                    .unitPrice(originalDetail.getUnitPrice().doubleValue())
                     .subtotal(rowTotal)
                     .build();
 
@@ -92,9 +96,18 @@ public class SaleReturnService {
                     .orElseThrow(() -> new RuntimeException("Devolución no encontrada"));
 
             if (saleReturn.getStatus() != SaleReturnStatus.DRAFT) {
-                return saleReturn;
+                throw new DomainException("La devolución ya no está en borrador");
             }
-
+            stockClient.restock(
+                    saleReturn.getId(),
+                    "Devolución " + saleReturn.getId(),
+                    saleReturn.getDetails().stream()
+                            .map(detail -> new StockClient.StockLine(detail.getOriginalSaleDetail().getProductId(), detail.getQuantity()))
+                            .toList()
+            );
+            if (saleReturn.getSale().getAccountsReceivable() != null) {
+                saleReturn.getSale().getAccountsReceivable().applyCredit(saleReturn.getTotalRefundAmount());
+            }
             saleReturn.setStatus(SaleReturnStatus.CONFIRMED);
 
 

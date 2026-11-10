@@ -1,6 +1,7 @@
 package com.nomos.store.service.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.valeerp.kernel.SoftDeletable;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,7 +14,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LegalEntity {
+public class LegalEntity extends SoftDeletable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

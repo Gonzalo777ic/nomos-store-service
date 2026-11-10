@@ -86,10 +86,10 @@ public class AnnouncementService {
      */
     @Transactional
     public void delete(Long id) {
-        if (!repository.existsById(id)) {
-            throw new EntityNotFoundException("No se puede eliminar. Anuncio no encontrado con ID: " + id);
-        }
-        repository.deleteById(id);
+        Announcement announcement = repository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("No se puede dar de baja. Anuncio no encontrado con ID: " + id));
+        announcement.retire(com.valeerp.kernel.Actors.current(), java.time.Instant.now());
+        repository.save(announcement);
     }
 
 

@@ -71,10 +71,10 @@ public class TaxRateController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<Void> deleteTaxRate(@PathVariable Long id) {
-        if (!taxRateRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        taxRateRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+        return taxRateRepository.findById(id).map(rate -> {
+            rate.retire(com.valeerp.kernel.Actors.current(), java.time.Instant.now());
+            taxRateRepository.save(rate);
+            return ResponseEntity.noContent().<Void>build();
+        }).orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

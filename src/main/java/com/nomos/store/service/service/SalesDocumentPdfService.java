@@ -163,6 +163,10 @@ public class SalesDocumentPdfService {
     }
 
     private String formatCurrency(Double amount) {
+        return formatCurrency(amount == null ? null : java.math.BigDecimal.valueOf(amount));
+    }
+
+    private String formatCurrency(java.math.BigDecimal amount) {
         return NumberFormat.getCurrencyInstance(new Locale("es", "PE")).format(amount);
     }
 }

@@ -90,15 +90,10 @@ public class PromotionController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        if (!promotionRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-
-        try {
-            promotionRepository.deleteById(id);
-            return ResponseEntity.noContent().build();
-        } catch (DataIntegrityViolationException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        }
+        return promotionRepository.findById(id).map(promotion -> {
+            promotion.retire(com.valeerp.kernel.Actors.current(), java.time.Instant.now());
+            promotionRepository.save(promotion);
+            return ResponseEntity.noContent().<Void>build();
+        }).orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

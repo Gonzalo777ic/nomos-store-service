@@ -43,24 +43,13 @@ public class SaleDetailController {
      */
     @PostMapping
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
-    public ResponseEntity<SaleDetail> addSaleDetail(@RequestBody SaleDetail detail) {
-        if (detail.getSale() == null || detail.getSale().getId() == null
-                || detail.getProductId() == null || detail.getQuantity() <= 0) {
-
-            return ResponseEntity.badRequest().build();
-        }
-
-        SaleDetail newDetail = saleDetailRepository.save(detail);
-        return ResponseEntity.status(HttpStatus.CREATED).body(newDetail);
+    public ResponseEntity<String> addSaleDetail(@RequestBody SaleDetail detail) {
+        return ResponseEntity.badRequest().body("Las líneas se registran con la venta. El detalle no se altera por fuera del agregado");
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
-    public ResponseEntity<Void> deleteSaleDetail(@PathVariable Long id) {
-        if (saleDetailRepository.existsById(id)) {
-            saleDetailRepository.deleteById(id);
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<String> deleteSaleDetail(@PathVariable Long id) {
+        return ResponseEntity.badRequest().body("Una línea de venta no se borra. Anule la venta o registre una devolución");
     }
 }

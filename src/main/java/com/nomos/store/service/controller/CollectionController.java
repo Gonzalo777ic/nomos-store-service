@@ -58,7 +58,7 @@ public class CollectionController {
         PaymentMethodConfig paymentMethod = paymentMethodRepository.findById(payload.getPaymentMethodId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Método de pago no encontrado"));
 
-        if ("CANCELADA".equals(sale.getStatus())) {
+        if (sale.getStatus() == SaleStatus.CANCELADA) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se puede registrar cobros en una venta CANCELADA.");
         }
 
@@ -95,10 +95,13 @@ public class CollectionController {
     @DeleteMapping("/{id}")
     @Transactional
     public ResponseEntity<Void> deleteCollection(@PathVariable Long id) {
-        if (!collectionRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Cobro no encontrado");
+        Collection collection = collectionRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cobro no encontrado"));
+        if (collection.getStatus() == CollectionStatus.CONFIRMED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Un cobro confirmado se revierte con una nota de crédito");
         }
-        collectionRepository.deleteById(id);
+        collection.setStatus(CollectionStatus.CANCELLED);
+        collectionRepository.save(collection);
         return ResponseEntity.noContent().build();
     }
     @PostMapping("/{id}/confirm")

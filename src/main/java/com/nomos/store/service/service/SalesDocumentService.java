@@ -43,7 +43,7 @@ public class SalesDocumentService {
                 .number(number)
                 .issueDate(LocalDateTime.now())
                 .status(SalesDocumentStatus.ISSUED)
-                .totalAmount(sale.getTotalAmount())
+                .totalAmount(sale.getTotalAmount().doubleValue())
                 .build();
 
         return documentRepository.save(doc);

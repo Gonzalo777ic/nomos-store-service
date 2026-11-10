@@ -1,6 +1,7 @@
 package com.nomos.store.service.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.valeerp.kernel.SoftDeletable;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,7 +16,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Announcement {
+public class Announcement extends SoftDeletable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

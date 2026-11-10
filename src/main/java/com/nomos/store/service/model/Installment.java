@@ -69,7 +69,7 @@ public class Installment {
 
         double capitalPending = this.expectedAmount - this.paidAmount;
 
-        double penalty = capitalPending * 0.009 * (daysLate / 30.0);
+        double penalty = capitalPending * com.valeerp.sales.PenaltyPolicy.monthlyRate() * (daysLate / 30.0);
 
         return Math.round(penalty * 100.0) / 100.0;
     }

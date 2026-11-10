@@ -88,16 +88,10 @@ public class LegalEntityController {
     @Transactional
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     public ResponseEntity<?> delete(@PathVariable Long id) {
-        if (!repository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        try {
-            repository.deleteById(id);
+        return repository.findById(id).map(entity -> {
+            entity.retire(com.valeerp.kernel.Actors.current(), java.time.Instant.now());
+            repository.save(entity);
             return ResponseEntity.noContent().build();
-        } catch (Exception e) {
-
-            return ResponseEntity.badRequest()
-                    .body("No se puede eliminar esta entidad porque ya tiene documentos asociados.");
-        }
+        }).orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

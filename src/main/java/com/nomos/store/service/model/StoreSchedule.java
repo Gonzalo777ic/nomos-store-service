@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import com.valeerp.kernel.SoftDeletable;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 
@@ -19,7 +20,7 @@ import java.time.LocalTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class StoreSchedule {
+public class StoreSchedule extends SoftDeletable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

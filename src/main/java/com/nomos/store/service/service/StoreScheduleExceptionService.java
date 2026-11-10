@@ -56,10 +56,10 @@ public class StoreScheduleExceptionService {
 
     @Transactional
     public void delete(Long id) {
-        if (!repository.existsById(id)) {
-            throw new EntityNotFoundException("Excepción no encontrada");
-        }
-        repository.deleteById(id);
+        StoreScheduleException exception = repository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Excepción no encontrada"));
+        exception.retire(com.valeerp.kernel.Actors.current(), java.time.Instant.now());
+        repository.save(exception);
     }
 
 

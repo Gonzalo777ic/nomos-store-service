@@ -30,13 +30,13 @@ public class SaleDetail {
     private Long productId;
 
     @Column(name = "unit_price", nullable = false)
-    private Double unitPrice;
+    private java.math.BigDecimal unitPrice;
 
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
     @Column(name = "subtotal", nullable = false)
-    private Double subtotal;
+    private java.math.BigDecimal subtotal;
 
     @Column(name = "tax_rate_id", nullable = false)
     private Long taxRateId;

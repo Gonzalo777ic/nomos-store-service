@@ -51,10 +51,10 @@ public class PromotionTargetController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<Void> deleteTarget(@PathVariable Long id) {
-        if (!targetRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        targetRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+        return targetRepository.findById(id).map(target -> {
+            target.retire(com.valeerp.kernel.Actors.current(), java.time.Instant.now());
+            targetRepository.save(target);
+            return ResponseEntity.noContent().<Void>build();
+        }).orElseGet(() -> ResponseEntity.notFound().build());
     }
 }
