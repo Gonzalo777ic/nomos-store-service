@@ -1,67 +1,50 @@
 package com.nomos.store.service.controller;
 
-import com.nomos.store.service.model.AccountsReceivable;
-import com.nomos.store.service.model.Installment;
 import com.nomos.store.service.repository.AccountsReceivableRepository;
-import com.nomos.store.service.repository.InstallmentRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import com.valeerp.kernel.DomainException;
+import com.valeerp.kernel.DomainExceptionHandler;
+import com.valeerp.receivable.AccountsReceivableResponse;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/store/accounts-receivable")
-@RequiredArgsConstructor
 public class AccountsReceivableController {
 
     private final AccountsReceivableRepository arRepository;
-    private final InstallmentRepository installmentRepository;
 
-    /**
-     * Obtener todas las cuentas por cobrar.
-     * Útil para el Dashboard de Finanzas.
-     */
+    public AccountsReceivableController(AccountsReceivableRepository arRepository) {
+        this.arRepository = arRepository;
+    }
+
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
-    public ResponseEntity<List<AccountsReceivable>> getAll() {
-        return ResponseEntity.ok(arRepository.findAll());
+    public List<AccountsReceivableResponse> getAll() {
+        return arRepository.findAll().stream().map(AccountsReceivableResponse::from).toList();
     }
 
-    /**
-     * Buscar la cuenta por cobrar específica de una Venta.
-     * Frontend: Cuando entres al detalle de una venta, llama a esto para mostrar el cronograma.
-     */
     @GetMapping("/sale/{saleId}")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
-    public ResponseEntity<AccountsReceivable> getBySaleId(@PathVariable Long saleId) {
+    public AccountsReceivableResponse getBySaleId(@PathVariable Long saleId) {
         return arRepository.findBySaleId(saleId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .map(AccountsReceivableResponse::from)
+                .orElseThrow(() -> new DomainException(DomainExceptionHandler.NOT_FOUND_CODE, "CxC no encontrada"));
     }
 
-    /**
-     * Obtener solo las cuotas (cronograma) de una cuenta por cobrar.
-     */
     @GetMapping("/{id}/installments")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
-    public ResponseEntity<List<Installment>> getInstallments(@PathVariable Long id) {
-        if (!arRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(installmentRepository.findByAccountsReceivableId(id));
+    public List<AccountsReceivableResponse.InstallmentResponse> getInstallments(@PathVariable Long id) {
+        return AccountsReceivableResponse.from(require(id)).installments();
     }
 
-
-    /**
-     * Obtener una cuenta por cobrar por su ID directo.
-     */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
-    public ResponseEntity<AccountsReceivable> getById(@PathVariable Long id) {
+    public AccountsReceivableResponse getById(@PathVariable Long id) {
+        return AccountsReceivableResponse.from(require(id));
+    }
+
+    private com.nomos.store.service.model.AccountsReceivable require(Long id) {
         return arRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .orElseThrow(() -> new DomainException(DomainExceptionHandler.NOT_FOUND_CODE, "CxC no encontrada"));
     }
 }

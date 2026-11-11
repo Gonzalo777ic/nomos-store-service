@@ -8,7 +8,9 @@ import com.nomos.store.service.repository.TaxRateRepository;
 import com.valeerp.kernel.DomainException;
 import com.valeerp.kernel.Money;
 import com.valeerp.sales.CatalogClient;
+import com.valeerp.sales.Discount;
 import com.valeerp.sales.PricedLine;
+import com.valeerp.sales.SaleTotals;
 import com.valeerp.sales.StockClient;
 import com.nomos.store.service.controller.SaleController.ReferenceDTO;
 import com.valeerp.sales.RegisterSale;
@@ -39,6 +41,7 @@ public class SaleService {
     private final StockClient stockClient;
     private final TaxRateRepository taxRateRepository;
     private final PromotionRepository promotionRepository;
+    private final com.valeerp.sales.CommissionService commissionService;
 
     @Value("${valeerp.currency}")
     private String currency;
@@ -76,32 +79,28 @@ public class SaleService {
 
         SaleTypeEnum saleType = SaleTypeEnum.valueOf(request.type().toUpperCase());
         PaymentConditionEnum paymentCondition = PaymentConditionEnum.valueOf(request.paymentCondition().toUpperCase());
-        List<PricedLine> priced = new ArrayList<>();
-        Money total = Money.zero(currency);
-        Money discount = Money.zero(currency);
-        Money tax = Money.zero(currency);
-        Money base = Money.zero(currency);
+        List<PricedLine> drafts = new ArrayList<>();
         for (RegisterSale.Line line : request.details()) {
             CatalogClient.CatalogPrice catalogPrice = catalogClient.get(line.productId());
             TaxRate taxRate = taxRateRepository.findById(line.taxRateId())
                     .orElseThrow(() -> new DomainException("La tasa de impuesto no existe"));
             Promotion promotion = line.promotionId() == null ? null : promotionRepository.findById(line.promotionId()).orElse(null);
-            PricedLine pricedLine = PricedLine.of(
+            Discount lineDiscount = Discount.optional(line.lineDiscountKind(), line.lineDiscountValue());
+            drafts.add(PricedLine.draft(
                     Money.of(catalogPrice.price(), currency),
                     line.quantity(),
-                    BigDecimal.valueOf(taxRate.getRate()),
+                    taxRate.rateAsDecimal(),
                     promotion == null ? null : promotion.getType(),
-                    promotion == null ? null : BigDecimal.valueOf(promotion.getDiscountValue())
-            );
-            priced.add(pricedLine);
-            total = total.plus(pricedLine.net());
-            discount = discount.plus(pricedLine.discount());
-            tax = tax.plus(pricedLine.tax());
-            base = base.plus(pricedLine.base());
+                    promotion == null ? null : BigDecimal.valueOf(promotion.getDiscountValue()),
+                    lineDiscount
+            ));
         }
+        Discount globalDiscount = Discount.optional(request.globalDiscountKind(), request.globalDiscountValue());
+        SaleTotals totals = SaleTotals.compute(drafts, globalDiscount);
+        List<PricedLine> priced = totals.lines();
 
         LocalDate finalDueDate = calculateDueDate(request.saleDate(), request.creditStartDate(), request.numberOfInstallments(), paymentCondition);
-        double totalAmount = total.amount().doubleValue();
+        Money totalMoney = totals.net();
 
         Sale newSale = Sale.builder()
                 .clientId(request.clientId())
@@ -109,8 +108,14 @@ public class SaleService {
                 .type(saleType)
                 .paymentCondition(paymentCondition)
                 .sellerId(request.sellerId())
-                .totalAmount(total.amount())
-                .totalDiscount(discount.amount())
+                .totalAmount(totals.net().amount())
+                .totalDiscount(totals.totalDiscount().amount())
+                .globalDiscount(totals.globalDiscount().amount())
+                .taxAmount(totals.tax().amount())
+                .baseAmount(totals.base().amount())
+                .salesTeamId(request.salesTeamId())
+                .territoryId(request.territoryId())
+                .commissionRuleId(request.commissionRuleId())
                 .status(SaleStatus.EMITIDA)
                 .dueDate(LocalDateTime.of(finalDueDate, request.saleDate().toLocalTime()))
                 .creditDays(request.creditDays())
@@ -118,24 +123,20 @@ public class SaleService {
 
         Sale savedSale = saleRepository.save(newSale);
 
-        AccountsReceivable ar = AccountsReceivable.builder()
-                .sale(savedSale)
-                .totalAmount(totalAmount)
-                .status(AccountsReceivableStatus.ACTIVE)
-                .build();
+        AccountsReceivable ar = AccountsReceivable.open(savedSale, totalMoney);
 
         LocalDate baseDate = request.creditStartDate() != null
                 ? request.creditStartDate()
                 : request.saleDate().toLocalDate();
 
-        List<Installment> installments = generateInstallments(
-                ar,
+        for (Installment installment : generateInstallments(
                 paymentCondition,
                 request.numberOfInstallments(),
                 baseDate,
-                totalAmount
-        );
-        ar.setInstallments(installments);
+                totalMoney
+        )) {
+            ar.addInstallment(installment);
+        }
 
         savedSale.setAccountsReceivable(ar);
         savedSale = saleRepository.save(savedSale);
@@ -149,6 +150,10 @@ public class SaleService {
             detail.setUnitPrice(pricedLine.gross().amount().divide(BigDecimal.valueOf(line.quantity()), Money.SCALE, Money.ROUNDING));
             detail.setQuantity(line.quantity());
             detail.setSubtotal(pricedLine.net().amount());
+            detail.setLineDiscount(pricedLine.promotionDiscount().plus(pricedLine.lineDiscount()).amount());
+            detail.setGlobalDiscountShare(pricedLine.globalDiscountShare().amount());
+            detail.setTaxAmount(pricedLine.tax().amount());
+            detail.setBaseAmount(pricedLine.base().amount());
             detail.setTaxRateId(line.taxRateId());
             detail.setPromotionId(line.promotionId());
             saleDetailRepository.save(detail);
@@ -158,7 +163,15 @@ public class SaleService {
             stockClient.issue(savedSale.getId(), "Venta " + savedSale.getId(), request.details().stream()
                     .map(line -> new StockClient.StockLine(line.productId(), line.quantity()))
                     .toList());
-            accountingService.recordSale(savedSale, tax, base);
+            accountingService.recordSale(savedSale, totals.tax(), totals.base());
+            if (request.commissionRuleId() != null) {
+                commissionService.accrueForSale(
+                        savedSale.getId(),
+                        savedSale.getSellerId(),
+                        request.commissionRuleId(),
+                        totals.base()
+                );
+            }
         } catch (RuntimeException exception) {
             stockClient.reverse(savedSale.getId(), "SALES", "Fallo al registrar la venta");
             savedSale.setStatus(SaleStatus.CANCELADA);
@@ -181,14 +194,7 @@ public class SaleService {
         accountingService.reverseSale(sale);
         sale.setStatus(SaleStatus.CANCELADA);
         if (sale.getAccountsReceivable() != null) {
-            sale.getAccountsReceivable().setStatus(AccountsReceivableStatus.CANCELLED);
-            if (sale.getAccountsReceivable().getCollections() != null) {
-                sale.getAccountsReceivable().getCollections().forEach(collection -> {
-                    if (collection.getStatus() != CollectionStatus.CANCELLED) {
-                        collection.setStatus(CollectionStatus.CANCELLED);
-                    }
-                });
-            }
+            sale.getAccountsReceivable().cancel();
         }
         saleRepository.save(sale);
     }
@@ -202,44 +208,26 @@ public class SaleService {
         return baseDate.plusMonths(months);
     }
 
-    /**
-     * Genera la lista de cuotas (Installments).
-     */
-    private List<Installment> generateInstallments(AccountsReceivable ar, PaymentConditionEnum condition, Integer numberOfInstallments, LocalDate baseDate, Double totalAmount) {
+    private List<Installment> generateInstallments(PaymentConditionEnum condition, Integer numberOfInstallments,
+                                                   LocalDate baseDate, Money totalAmount) {
         List<Installment> installments = new ArrayList<>();
-
         if (condition == PaymentConditionEnum.CONTADO) {
-            installments.add(Installment.builder()
-                    .accountsReceivable(ar)
-                    .number(1)
-                    .expectedAmount(totalAmount)
-                    .dueDate(baseDate)
-                    .status(InstallmentStatus.PENDING)
-                    .build());
-        } else {
-            int n = (numberOfInstallments != null && numberOfInstallments > 0) ? numberOfInstallments : 1;
-            double rawAmount = totalAmount / n;
-            double roundedAmount = Math.round(rawAmount * 100.0) / 100.0;
-            double accumulated = 0.0;
-
-            for (int i = 1; i <= n; i++) {
-                double currentAmount;
-
-                if (i == n) {
-                    currentAmount = Math.round((totalAmount - accumulated) * 100.0) / 100.0;
-                } else {
-                    currentAmount = roundedAmount;
-                }
-                accumulated += currentAmount;
-
-                installments.add(Installment.builder()
-                        .accountsReceivable(ar)
-                        .number(i)
-                        .expectedAmount(currentAmount)
-                        .dueDate(baseDate.plusMonths(i))
-                        .status(InstallmentStatus.PENDING)
-                        .build());
+            installments.add(Installment.schedule(1, baseDate, totalAmount));
+            return installments;
+        }
+        int n = (numberOfInstallments != null && numberOfInstallments > 0) ? numberOfInstallments : 1;
+        BigDecimal share = totalAmount.amount()
+                .divide(BigDecimal.valueOf(n), Money.SCALE, Money.ROUNDING);
+        Money accumulated = Money.zero(totalAmount.currency());
+        for (int i = 1; i <= n; i++) {
+            Money current;
+            if (i == n) {
+                current = totalAmount.minus(accumulated);
+            } else {
+                current = Money.of(share, totalAmount.currency());
+                accumulated = accumulated.plus(current);
             }
+            installments.add(Installment.schedule(i, baseDate.plusMonths(i), current));
         }
         return installments;
     }

@@ -1,120 +1,98 @@
 package com.nomos.store.service.service;
 
-import com.nomos.store.service.model.*;
-import com.nomos.store.service.repository.CashMovementRepository;
-import com.nomos.store.service.repository.PaymentMethodConfigRepository;
+import com.nomos.store.service.model.CashMovement;
+import com.nomos.store.service.model.CashMovementType;
+import com.nomos.store.service.model.Collection;
+import com.nomos.store.service.model.PaymentMethodConfig;
+import com.valeerp.kernel.Actor;
+import com.valeerp.kernel.Money;
+import com.valeerp.kernel.TimeProvider;
+import com.valeerp.treasury.CashChannel;
+import com.valeerp.treasury.CashMovementCreateRequest;
+import com.valeerp.treasury.TreasuryCashMovementService;
+import com.valeerp.treasury.TreasuryPolicy;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 
+/**
+ * Adaptador legacy para cobranza y rutas {@code /api/store/cash-movements}.
+ * El libro vive en {@link TreasuryCashMovementService}.
+ */
 @Service
-@RequiredArgsConstructor
 public class CashMovementService {
 
-    private final CashMovementRepository repository;
-    private final PaymentMethodConfigRepository paymentMethodRepository;
+    private final TreasuryCashMovementService treasuryCashMovementService;
+    private final TimeProvider timeProvider;
 
-    /**
-     * Registra un ingreso de dinero derivado de una cobranza (Collection).
-     * Este método debe ser llamado DESPUÉS de guardar la Collection.
-     */
-    @Transactional
-    public CashMovement registerIncomeFromCollection(Collection collection, Long userId) {
-
-        CashMovementStatus status = CashMovementStatus.PROCESSED;
-
-        CashMovement movement = CashMovement.builder()
-                .type(CashMovementType.INCOME)
-                .amount(collection.getAmount())
-                .movementDate(LocalDateTime.now())
-                .paymentMethod(collection.getPaymentMethod())
-                .collection(collection)
-                .sale(collection.getSale())
-                .externalReference(collection.getReferenceNumber())
-                .concept("Cobro Venta " + collection.getSale().getId())
-                .status(status)
-                .createdByUserId(userId)
-                .build();
-
-        return repository.save(movement);
+    public CashMovementService(TreasuryCashMovementService treasuryCashMovementService,
+                               TimeProvider timeProvider) {
+        this.treasuryCashMovementService = treasuryCashMovementService;
+        this.timeProvider = timeProvider;
     }
 
-    /**
-     * Registra un egreso (ej: Devolución de dinero por nota de crédito)
-     */
+    @Transactional
+    public CashMovement registerIncomeFromCollection(Collection collection, Long userId) {
+        CashMovement movement = CashMovement.incomeFromCollection(
+                collection, Actor.of(userId == null ? null : String.valueOf(userId)), timeProvider.now());
+        movement.attachCreatedByUserId(userId);
+        return treasuryCashMovementService.save(movement);
+    }
+
     @Transactional
     public CashMovement registerExpense(Double amount, PaymentMethodConfig method, String reason, Long userId) {
-        CashMovement movement = CashMovement.builder()
-                .type(CashMovementType.EXPENSE)
-                .amount(amount)
-                .movementDate(LocalDateTime.now())
-                .paymentMethod(method)
-                .concept(reason)
-                .status(CashMovementStatus.PROCESSED)
-                .createdByUserId(userId)
-                .build();
-
-        return repository.save(movement);
+        Money money = Money.of(BigDecimal.valueOf(amount), TreasuryPolicy.DEFAULT_CURRENCY.code());
+        CashMovement movement = CashMovement.record(
+                CashMovementType.EXPENSE,
+                money,
+                CashChannel.CASH_REGISTER,
+                method,
+                null,
+                null,
+                null,
+                reason,
+                null,
+                TreasuryPolicy.SOURCE_MANUAL,
+                null,
+                Actor.of(userId == null ? null : String.valueOf(userId)),
+                timeProvider.now()
+        );
+        movement.attachCreatedByUserId(userId);
+        return treasuryCashMovementService.save(movement);
     }
 
     public List<CashMovement> getDailyMovements() {
-        LocalDateTime startOfDay = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0);
-        LocalDateTime endOfDay = LocalDateTime.now().withHour(23).withMinute(59).withSecond(59);
-        return repository.findByMovementDateBetween(startOfDay, endOfDay);
+        LocalDate today = LocalDate.now();
+        return treasuryCashMovementService.listByDate(today, today);
     }
 
-    /**
-     * Método para registrar un movimiento manual desde el Dashboard.
-     * Soporta tanto Ingresos como Egresos.
-     */
     @Transactional
     public CashMovement createManualMovement(ManualMovementPayload payload, Long userId) {
-
-        PaymentMethodConfig pm = paymentMethodRepository.findById(payload.getPaymentMethodId())
-                .orElseThrow(() -> new IllegalArgumentException("Método de pago no encontrado"));
-
-        CashMovement movement = CashMovement.builder()
-                .type(payload.getType())
-                .amount(payload.getAmount())
-                .movementDate(LocalDateTime.now()) // O usar payload.getDate() si quieres permitir fechas pasadas
-                .paymentMethod(pm)
-                .concept(payload.getConcept())
-                .externalReference(payload.getExternalReference())
-                .status(CashMovementStatus.PROCESSED) // Movimientos manuales nacen confirmados
-                .createdByUserId(userId)
-                .build();
-
-        return repository.save(movement);
+        CashMovementCreateRequest request = new CashMovementCreateRequest(
+                payload.getType() == null ? null : payload.getType().name(),
+                payload.getAmount() == null ? null : BigDecimal.valueOf(payload.getAmount()),
+                TreasuryPolicy.DEFAULT_CURRENCY.code(),
+                CashChannel.CASH_REGISTER.name(),
+                payload.getPaymentMethodId(),
+                null,
+                null,
+                null,
+                payload.getConcept(),
+                payload.getExternalReference()
+        );
+        CashMovement movement = treasuryCashMovementService.createManual(request);
+        movement.attachCreatedByUserId(userId);
+        return treasuryCashMovementService.save(movement);
     }
 
-    /**
-     * Obtener movimientos filtrados por rango de fechas.
-     * Si las fechas son nulas, devuelve los del día actual.
-     */
     public List<CashMovement> getMovementsByFilter(LocalDate startDate, LocalDate endDate) {
-        LocalDateTime start;
-        LocalDateTime end;
-
-        if (startDate == null || endDate == null) {
-            // Por defecto: HOY
-            start = LocalDate.now().atStartOfDay();
-            end = LocalDate.now().atTime(LocalTime.MAX);
-        } else {
-            start = startDate.atStartOfDay();
-            end = endDate.atTime(LocalTime.MAX);
-        }
-
-        // Usamos el método que ya tenías en el repositorio
-        return repository.findByMovementDateBetween(start, end);
+        return treasuryCashMovementService.listByDate(startDate, endDate);
     }
 
-    // DTO Interno para el payload manual
     @Data
     public static class ManualMovementPayload {
         private CashMovementType type;
@@ -123,6 +101,4 @@ public class CashMovementService {
         private String concept;
         private String externalReference;
     }
-
-
 }

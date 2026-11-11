@@ -17,12 +17,22 @@ public abstract class SoftDeletable {
     @Column(name = "deleted_by", length = 120)
     private String deletedBy;
 
-    public void retire(String actor, Instant when) {
+    public void retire(Actor actor, Instant when) {
         if (this.deletedAt != null) {
             throw new DomainException("El registro ya fue dado de baja");
         }
+        Actor resolved = actor == null ? Actor.SYSTEM : actor;
         this.deletedAt = when;
-        this.deletedBy = actor == null || actor.isBlank() ? "sistema" : actor;
+        this.deletedBy = resolved.id();
+    }
+
+    public void retire(String actor, Instant when) {
+        retire(Actor.of(actor), when);
+    }
+
+    public void restore() {
+        this.deletedAt = null;
+        this.deletedBy = null;
     }
 
     @JsonIgnore

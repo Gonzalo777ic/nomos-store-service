@@ -26,9 +26,12 @@ public class SaleController {
         private Long productId;
         private Double unitPrice;
         private Integer quantity;
+        /** Ignorado: el agregado calcula el neto. */
         private Double subtotal;
         private Long taxRateId;
         private Long promotionId;
+        private String lineDiscountKind;
+        private java.math.BigDecimal lineDiscountValue;
     }
 
     @Data
@@ -42,6 +45,11 @@ public class SaleController {
         private Long sellerId;
         private List<SaleRequestDetail> details;
         private Integer numberOfInstallments;
+        private String globalDiscountKind;
+        private java.math.BigDecimal globalDiscountValue;
+        private Long salesTeamId;
+        private Long territoryId;
+        private Long commissionRuleId;
     }
 
     @Data
@@ -88,12 +96,19 @@ public class SaleController {
                     request.getCreditDays(),
                     request.getSellerId(),
                     request.getNumberOfInstallments(),
+                    request.getGlobalDiscountKind(),
+                    request.getGlobalDiscountValue(),
+                    request.getSalesTeamId(),
+                    request.getTerritoryId(),
+                    request.getCommissionRuleId(),
                     request.getDetails().stream()
                             .map(detail -> new com.valeerp.sales.RegisterSale.Line(
                                     detail.getProductId(),
                                     detail.getQuantity(),
                                     detail.getTaxRateId(),
-                                    detail.getPromotionId()))
+                                    detail.getPromotionId(),
+                                    detail.getLineDiscountKind(),
+                                    detail.getLineDiscountValue()))
                             .toList()
             ));
             return ResponseEntity.status(HttpStatus.CREATED).body(createdSale);

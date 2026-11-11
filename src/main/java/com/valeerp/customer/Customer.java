@@ -1,5 +1,6 @@
 package com.valeerp.customer;
 
+import com.valeerp.kernel.Actor;
 import com.valeerp.kernel.SoftDeletable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,6 +9,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.time.Instant;
+
+/**
+ * Proyección ecommerce de cliente (piloto del kernel SoftDeletable + Actor + reloj).
+ * La ficha comercial canónica vive en {@code com.valeerp.partner.Partner}.
+ */
 @Entity
 @Table(name = "customers")
 public class Customer extends SoftDeletable {
@@ -75,5 +82,9 @@ public class Customer extends SoftDeletable {
         this.documentNumber = documentNumber;
         this.phone = phone;
         this.address = address;
+    }
+
+    public void archive(Actor actor, Instant when) {
+        retire(actor, when);
     }
 }

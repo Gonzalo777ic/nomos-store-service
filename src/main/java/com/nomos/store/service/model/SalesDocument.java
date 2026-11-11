@@ -64,4 +64,15 @@ public class SalesDocument {
     public String getFullDocumentId() {
         return series + "-" + number;
     }
+
+    /**
+     * Anulación lógica del comprobante (contra-documento vía estado VOIDED). No delete físico.
+     */
+    public void voidDocument(String reason) {
+        if (this.status == SalesDocumentStatus.VOIDED) {
+            throw new com.valeerp.kernel.DomainException("El documento ya está anulado");
+        }
+        this.status = SalesDocumentStatus.VOIDED;
+        this.responseMessage = reason;
+    }
 }

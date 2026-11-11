@@ -63,10 +63,15 @@ public class SalesDocumentService {
 
     @Transactional
     public SalesDocument issueCreditNote(Long saleId, Double amount, String reason) {
-        Sale sale = saleRepository.findById(saleId)
-                .orElseThrow(() -> new RuntimeException("Venta no encontrada"));
+        return issueCreditNote(saleId, java.math.BigDecimal.valueOf(amount == null ? 0d : amount), reason);
+    }
 
-        boolean isFactura = "FACTURA".equals(sale.getType().name());
+    @Transactional
+    public SalesDocument issueCreditNote(Long saleId, java.math.BigDecimal amount, String reason) {
+        Sale sale = saleRepository.findById(saleId)
+                .orElseThrow(() -> new com.valeerp.kernel.DomainException("Venta no encontrada"));
+
+        boolean isFactura = SaleTypeEnum.FACTURA == sale.getType();
         String series = isFactura ? "FC01" : "BC01";
 
         long count = documentRepository.countBySeries(series);
@@ -79,10 +84,21 @@ public class SalesDocumentService {
                 .number(number)
                 .issueDate(LocalDateTime.now())
                 .status(SalesDocumentStatus.ISSUED)
-                .totalAmount(amount)
+                .totalAmount(amount == null ? 0d : amount.doubleValue())
                 .responseMessage(reason)
                 .build();
 
+        return documentRepository.save(doc);
+    }
+
+    @Transactional
+    public SalesDocument voidCreditNote(Long documentId, String reason) {
+        SalesDocument doc = documentRepository.findById(documentId)
+                .orElseThrow(() -> new com.valeerp.kernel.DomainException("Documento no encontrado"));
+        if (doc.getType() != SalesDocumentType.NOTA_CREDITO) {
+            throw new com.valeerp.kernel.DomainException("Solo una nota de crédito se anula por este caso de uso");
+        }
+        doc.voidDocument(reason);
         return documentRepository.save(doc);
     }
 }

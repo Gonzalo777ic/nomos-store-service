@@ -8,11 +8,16 @@ public final class Actors {
     private Actors() {
     }
 
-    public static String current() {
+    public static Actor currentActor() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication.getName() == null || authentication.getName().isBlank()) {
-            return "sistema";
+            return Actor.SYSTEM;
         }
-        return authentication.getName();
+        return Actor.of(authentication.getName());
+    }
+
+    /** Identificador textual del actor actual (compatibilidad con retiros existentes). */
+    public static String current() {
+        return currentActor().id();
     }
 }

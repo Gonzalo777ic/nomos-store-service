@@ -48,6 +48,27 @@ public class Sale {
     @Column(name = "total_discount", nullable = false)
     private java.math.BigDecimal totalDiscount;
 
+    @Column(name = "global_discount", nullable = false)
+    @Builder.Default
+    private java.math.BigDecimal globalDiscount = java.math.BigDecimal.ZERO;
+
+    @Column(name = "tax_amount", nullable = false)
+    @Builder.Default
+    private java.math.BigDecimal taxAmount = java.math.BigDecimal.ZERO;
+
+    @Column(name = "base_amount", nullable = false)
+    @Builder.Default
+    private java.math.BigDecimal baseAmount = java.math.BigDecimal.ZERO;
+
+    @Column(name = "sales_team_id")
+    private Long salesTeamId;
+
+    @Column(name = "territory_id")
+    private Long territoryId;
+
+    @Column(name = "commission_rule_id")
+    private Long commissionRuleId;
+
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnoreProperties("sale")
     @Builder.Default
@@ -82,15 +103,17 @@ public class Sale {
     private List<SaleReturn> returns = new ArrayList<>();
 
 
-    public Double getPaidAmount() {
-        return accountsReceivable != null ? accountsReceivable.getPaidAmount() : 0.0;
+    public java.math.BigDecimal getPaidAmount() {
+        return accountsReceivable != null
+                ? accountsReceivable.getPaidAmount()
+                : java.math.BigDecimal.ZERO;
     }
 
-    public Double getBalance() {
+    public java.math.BigDecimal getBalance() {
         if (accountsReceivable != null) {
             return accountsReceivable.getBalance();
         }
-        return totalAmount != null ? totalAmount.doubleValue() : 0.0;
+        return totalAmount != null ? totalAmount : java.math.BigDecimal.ZERO;
     }
 
     public String getPaymentStatus() {
@@ -120,11 +143,13 @@ public class Sale {
                 returns.stream().anyMatch(r -> r.getStatus() == SaleReturnStatus.CONFIRMED);
     }
 
-    public Double getTotalReturnedAmount() {
-        if (returns == null) return 0.0;
+    public java.math.BigDecimal getTotalReturnedAmount() {
+        if (returns == null) {
+            return java.math.BigDecimal.ZERO;
+        }
         return returns.stream()
                 .filter(r -> r.getStatus() == SaleReturnStatus.CONFIRMED)
-                .mapToDouble(SaleReturn::getTotalRefundAmount)
-                .sum();
+                .map(SaleReturn::getTotalRefundAmount)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
     }
 }

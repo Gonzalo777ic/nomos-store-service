@@ -63,8 +63,37 @@ public final class Money {
         return new Money(amount.subtract(base), currency);
     }
 
+    public Money cappedAt(Money max) {
+        requireSameCurrency(max);
+        if (amount.compareTo(max.amount) > 0) {
+            return max;
+        }
+        return this;
+    }
+
     public boolean isNegative() {
         return amount.signum() < 0;
+    }
+
+    public boolean isZero() {
+        return amount.signum() == 0;
+    }
+
+    public boolean isPositive() {
+        return amount.signum() > 0;
+    }
+
+    public int compareTo(Money other) {
+        requireSameCurrency(other);
+        return amount.compareTo(other.amount);
+    }
+
+    public boolean greaterThan(Money other) {
+        return compareTo(other) > 0;
+    }
+
+    public boolean lessThan(Money other) {
+        return compareTo(other) < 0;
     }
 
     public BigDecimal amount() {
@@ -73,6 +102,27 @@ public final class Money {
 
     public String currency() {
         return currency;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (!(other instanceof Money money)) {
+            return false;
+        }
+        return amount.compareTo(money.amount) == 0 && currency.equals(money.currency);
+    }
+
+    @Override
+    public int hashCode() {
+        return amount.hashCode() * 31 + currency.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return amount.toPlainString() + " " + currency;
     }
 
     private void requireSameCurrency(Money other) {

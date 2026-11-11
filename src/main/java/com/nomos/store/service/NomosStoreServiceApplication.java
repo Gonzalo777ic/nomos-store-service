@@ -1,6 +1,8 @@
 package com.nomos.store.service;
 
 import com.valeerp.accounting.LedgerProperties;
+import com.valeerp.partner.PartnerDocumentPolicyProperties;
+import com.valeerp.partner.PartnerProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -11,7 +13,11 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 @SpringBootApplication(scanBasePackages = {"com.nomos.store.service", "com.valeerp"})
 @EntityScan(basePackages = {"com.nomos.store.service", "com.valeerp"})
 @EnableJpaRepositories(basePackages = {"com.nomos.store.service", "com.valeerp"})
-@EnableConfigurationProperties(LedgerProperties.class)
+@EnableConfigurationProperties({
+        LedgerProperties.class,
+        PartnerProperties.class,
+        PartnerDocumentPolicyProperties.class
+})
 @EnableMethodSecurity
 public class NomosStoreServiceApplication {
 
