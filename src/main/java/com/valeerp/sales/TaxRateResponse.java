@@ -1,6 +1,6 @@
 package com.valeerp.sales;
 
-import com.nomos.store.service.model.TaxRate;
+import com.valeerp.store.service.model.TaxRate;
 
 import java.math.BigDecimal;
 

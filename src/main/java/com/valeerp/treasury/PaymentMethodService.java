@@ -1,7 +1,7 @@
 package com.valeerp.treasury;
 
-import com.nomos.store.service.model.PaymentMethodConfig;
-import com.nomos.store.service.repository.PaymentMethodConfigRepository;
+import com.valeerp.store.service.model.PaymentMethodConfig;
+import com.valeerp.store.service.repository.PaymentMethodConfigRepository;
 import com.valeerp.kernel.Actors;
 import com.valeerp.kernel.DomainException;
 import com.valeerp.kernel.DomainExceptionHandler;

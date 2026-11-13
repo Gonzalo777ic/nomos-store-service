@@ -253,7 +253,7 @@ public class SaleOrderService {
         return unitPrice;
     }
 
-    private com.nomos.store.service.model.TaxRate resolveTaxRate(Long taxRateId) {
+    private com.valeerp.store.service.model.TaxRate resolveTaxRate(Long taxRateId) {
         if (taxRateId != null) {
             return taxRateService.require(taxRateId);
         }

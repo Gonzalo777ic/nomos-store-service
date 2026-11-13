@@ -1,6 +1,6 @@
 package com.valeerp.treasury;
 
-import com.nomos.store.service.model.PaymentMethodConfig;
+import com.valeerp.store.service.model.PaymentMethodConfig;
 
 public record PaymentMethodResponse(
         Long id,

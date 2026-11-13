@@ -1,6 +1,6 @@
 package com.valeerp.treasury;
 
-import com.nomos.store.service.model.CashMovement;
+import com.valeerp.store.service.model.CashMovement;
 import com.valeerp.kernel.Actors;
 import com.valeerp.kernel.DomainException;
 import com.valeerp.kernel.DomainExceptionHandler;

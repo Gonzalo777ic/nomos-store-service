@@ -1,6 +1,6 @@
 package com.valeerp.accounting;
 
-import com.nomos.store.service.model.TaxRate;
+import com.valeerp.store.service.model.TaxRate;
 import com.valeerp.kernel.DomainException;
 import com.valeerp.kernel.DomainExceptionHandler;
 import com.valeerp.kernel.Money;

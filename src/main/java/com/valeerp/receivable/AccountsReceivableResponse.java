@@ -1,7 +1,7 @@
 package com.valeerp.receivable;
 
-import com.nomos.store.service.model.AccountsReceivable;
-import com.nomos.store.service.model.Installment;
+import com.valeerp.store.service.model.AccountsReceivable;
+import com.valeerp.store.service.model.Installment;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

@@ -1,6 +1,6 @@
 package com.valeerp.order;
 
-import com.nomos.store.service.service.SaleService;
+import com.valeerp.store.service.service.SaleService;
 import com.valeerp.customer.Customer;
 import com.valeerp.customer.CustomerService;
 import com.valeerp.kernel.DomainException;

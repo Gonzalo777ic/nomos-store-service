@@ -1,7 +1,7 @@
 package com.valeerp.sales;
 
-import com.nomos.store.service.model.TaxRate;
-import com.nomos.store.service.repository.TaxRateRepository;
+import com.valeerp.store.service.model.TaxRate;
+import com.valeerp.store.service.repository.TaxRateRepository;
 import com.valeerp.kernel.Actors;
 import com.valeerp.kernel.DomainException;
 import com.valeerp.kernel.DomainExceptionHandler;

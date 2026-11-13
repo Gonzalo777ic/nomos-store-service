@@ -8,10 +8,10 @@
         <version>3.5.5</version> <!-- Usando tu versión actual -->
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>com.nomos.inventory</groupId>
-    <artifactId>nomos-store-service</artifactId>
+    <groupId>com.valeerp</groupId>
+    <artifactId>valeerp-commercial</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>nomos-store-service</name>
+    <name>ValeERP Commercial</name>
     <description>Microservicio para Ventas, Logística y Precios</description>
 
     <properties>

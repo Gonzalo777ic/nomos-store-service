@@ -1,7 +1,7 @@
 package com.valeerp.order;
 
-import com.nomos.store.service.model.TaxRate;
-import com.nomos.store.service.repository.TaxRateRepository;
+import com.valeerp.store.service.model.TaxRate;
+import com.valeerp.store.service.repository.TaxRateRepository;
 import com.valeerp.customer.CustomerService;
 import com.valeerp.kernel.DomainException;
 import org.springframework.beans.factory.annotation.Value;

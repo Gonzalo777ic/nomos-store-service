@@ -1,6 +1,6 @@
 package com.valeerp.treasury;
 
-import com.nomos.store.service.model.CashMovement;
+import com.valeerp.store.service.model.CashMovement;
 
 import java.time.Instant;
 import java.time.LocalDateTime;

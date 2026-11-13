@@ -1,9 +1,9 @@
 package com.valeerp.pos;
 
-import com.nomos.store.service.model.PaymentMethodConfig;
-import com.nomos.store.service.model.TaxRate;
-import com.nomos.store.service.repository.PaymentMethodConfigRepository;
-import com.nomos.store.service.repository.TaxRateRepository;
+import com.valeerp.store.service.model.PaymentMethodConfig;
+import com.valeerp.store.service.model.TaxRate;
+import com.valeerp.store.service.repository.PaymentMethodConfigRepository;
+import com.valeerp.store.service.repository.TaxRateRepository;
 import com.valeerp.kernel.DomainException;
 import com.valeerp.kernel.DomainExceptionHandler;
 import com.valeerp.kernel.Money;

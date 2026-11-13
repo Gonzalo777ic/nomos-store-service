@@ -1,7 +1,7 @@
 package com.valeerp.sales;
 
-import com.nomos.store.service.model.SaleReturn;
-import com.nomos.store.service.model.SaleReturnDetail;
+import com.valeerp.store.service.model.SaleReturn;
+import com.valeerp.store.service.model.SaleReturnDetail;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
